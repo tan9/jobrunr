@@ -12,4 +12,9 @@ public class IConst1OperandInstruction extends ZeroOperandInstruction {
     public Object invokeInstruction() {
         return 1;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "ICONST_1";
+    }
 }

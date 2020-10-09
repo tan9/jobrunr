@@ -24,4 +24,9 @@ public class ANewArrayOperandInstruction extends VisitTypeInstruction {
         }
         return result;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "ANEWARRAY " + type;
+    }
 }

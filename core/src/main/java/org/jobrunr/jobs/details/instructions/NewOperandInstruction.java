@@ -17,4 +17,9 @@ public class NewOperandInstruction extends VisitTypeInstruction {
     public Object invokeInstruction() {
         return null;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "NEW";
+    }
 }

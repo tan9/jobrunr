@@ -8,4 +8,10 @@ public class ILoadOperandInstruction extends VisitLocalVariableInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "ILOAD " + variable;
+    }
+
+
 }

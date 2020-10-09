@@ -19,4 +19,12 @@ public class SingleIntOperandInstruction extends AbstractJVMInstruction {
     public Object invokeInstruction() {
         return intValue;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        if (-128 < intValue && intValue < 127) {
+            return "BIPUSH " + intValue;
+        }
+        return "SIPUSH " + intValue;
+    }
 }

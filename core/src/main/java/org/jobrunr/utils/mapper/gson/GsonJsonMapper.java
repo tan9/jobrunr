@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.unmodifiableList;
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 
 public class GsonJsonMapper implements JsonMapper {
 
@@ -77,7 +78,7 @@ public class GsonJsonMapper implements JsonMapper {
             ReflectionUtils.makeAccessible(factories);
             final List o = new ArrayList<TypeAdapterFactory>((Collection<? extends TypeAdapterFactory>) factories.get(gson));
             if (!o.get(1).equals(ObjectTypeAdapter.FACTORY))
-                throw JobRunrException.shouldNotHappenException(String.format("It looks like you are running a Gson version (%s) which is not compatible with JobRunr", VersionRetriever.getVersion(Gson.class)));
+                throw shouldNotHappenError(String.format("It looks like you are running a Gson version (%s) which is not compatible with JobRunr", VersionRetriever.getVersion(Gson.class)), new IllegalStateException("Cannot apply workaround for https://github.com/google/gson/issues/1177"));
             o.set(1, ClassNameObjectTypeAdapter.FACTORY);
             factories.set(gson, unmodifiableList(o));
         } catch (ReflectiveOperationException e) {

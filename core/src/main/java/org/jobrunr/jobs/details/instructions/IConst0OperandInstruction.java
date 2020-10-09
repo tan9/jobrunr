@@ -13,4 +13,9 @@ public class IConst0OperandInstruction extends ZeroOperandInstruction {
         return 0;
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "ICONST_0";
+    }
+
 }

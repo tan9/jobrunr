@@ -1,5 +1,6 @@
 package org.jobrunr.jobs.details;
 
+import org.jobrunr.JobRunrError;
 import org.jobrunr.jobs.JobDetails;
 import org.jobrunr.jobs.details.instructions.*;
 import org.jobrunr.jobs.lambdas.IocJobLambdaFromStream;
@@ -10,7 +11,8 @@ import org.objectweb.asm.*;
 import java.io.IOException;
 import java.lang.invoke.SerializedLambda;
 
-import static org.jobrunr.JobRunrException.shouldNotHappenException;
+import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.getClassContainingLambdaAsInputStream;
+import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.getClassLocationOfLambda;
 
 public class JobDetailsAsmGenerator implements JobDetailsGenerator {
     private final SerializedLambdaConverter serializedLambdaConverter;
@@ -46,11 +48,11 @@ public class JobDetailsAsmGenerator implements JobDetailsGenerator {
 
     private JobDetails findJobDetailsInByteCode(Object lambda, JobDetailsFinder jobDetailsFinder) {
         try {
-            ClassReader parser = new ClassReader(JobDetailsGeneratorUtils.getClassContainingLambdaAsInputStream(lambda));
+            ClassReader parser = new ClassReader(getClassContainingLambdaAsInputStream(lambda));
             parser.accept(jobDetailsFinder, ClassReader.SKIP_FRAMES);
             return jobDetailsFinder.getJobDetails();
         } catch (IOException e) {
-            throw shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Could not parse class '" + getClassLocationOfLambda(lambda) + "'", e);
         }
     }
 

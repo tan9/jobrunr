@@ -19,4 +19,9 @@ public class LdcInstruction extends AbstractJVMInstruction {
         this.value = value;
         jobDetailsBuilder.pushInstructionOnStack(this);
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "LDC " + value;
+    }
 }

@@ -7,4 +7,9 @@ public class ALoadOperandInstruction extends VisitLocalVariableInstruction {
     public ALoadOperandInstruction(JobDetailsFinderContext jobDetailsBuilder) {
         super(jobDetailsBuilder);
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "ALOAD " + variable;
+    }
 }

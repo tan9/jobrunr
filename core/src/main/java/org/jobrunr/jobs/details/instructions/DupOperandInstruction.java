@@ -18,4 +18,9 @@ public class DupOperandInstruction extends ZeroOperandInstruction {
         return null;
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "DUP";
+    }
+
 }

@@ -1,12 +1,13 @@
 package org.jobrunr.jobs.details.instructions;
 
-import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.details.JobDetailsFinderContext;
 import org.jobrunr.utils.reflection.ReflectionUtils;
 import org.objectweb.asm.Handle;
 
+import java.util.Arrays;
 import java.util.List;
 
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptor;
 
 public class InvokeDynamicInstruction extends AbstractJVMInstruction {
@@ -56,7 +57,18 @@ public class InvokeDynamicInstruction extends AbstractJVMInstruction {
             }
             return result;
         }
-        throw JobRunrException.shouldNotHappenException("");
+        throw shouldNotHappenError("Unknown InvokeDynamicInstruction: " + name + descriptor, jobDetailsBuilder);
+    }
+
+    @Override
+    public String toDiagnosticsString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("INVOKEDYNAMIC " + name + descriptor + " [").append("\n");
+        sb.append("  ").append(getBootstrapMethodHandle().getOwner() + "." + getBootstrapMethodHandle().getName() + "(" + bootstrapMethodHandle.getDesc() + ")").append("\n");
+        sb.append("  ").append("arguments:").append("\n");
+        Arrays.stream(bootstrapMethodArguments).forEach(arg -> sb.append("    " + arg.toString()).append("\n"));
+        sb.append("]");
+        return sb.toString();
     }
 
     public static String replaceLast(String text, String regex, String replacement) {

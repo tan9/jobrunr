@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.createObjectViaConstructor;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptorAsArray;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.toFQClassName;
@@ -36,7 +37,11 @@ public class InvokeSpecialInstruction extends VisitMethodInstruction {
             throw JobRunrException.invalidLambdaException(new IllegalAccessException(String.format("JobRunr cannot access member \"%s\" of class %s with modifiers \"private\". Please make the method \"public\".", name, className)));
         }
 
-        throw JobRunrException.shouldNotHappenException("Unknown INVOKESPECIAL instruction: " + className + "." + name);
+        throw shouldNotHappenError("Unknown INVOKESPECIAL instruction: " + owner + "." + name, jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "INVOKESPECIAL " + owner + "." + name + descriptor;
+    }
 }

@@ -35,7 +35,8 @@ public class ConcurrentJobModificationResolver {
                 .collect(toList());
 
         if (!failedToResolve.isEmpty()) {
-            throw new ConcurrentJobModificationException(failedToResolve.stream().map(ConcurrentJobModificationResolveResult::getJob).collect(toList()));
+            List<Job> failedJobs = failedToResolve.stream().map(ConcurrentJobModificationResolveResult::getJob).collect(toList());
+            throw new ConcurrentJobModificationException(failedJobs);
         }
     }
 
@@ -46,7 +47,7 @@ public class ConcurrentJobModificationResolver {
                 .filter(allowedConcurrentStateChange -> allowedConcurrentStateChange.matches(localJob.getState(), storageProviderJob.getState()))
                 .findFirst()
                 .map(allowedConcurrentStateChange -> allowedConcurrentStateChange.resolve(localJob, storageProviderJob))
-                .orElse(ConcurrentJobModificationResolveResult.failed(localJob));
+                .orElse(ConcurrentJobModificationResolveResult.failed(localJob, storageProviderJob));
     }
 
     private Job getJobFromStorageProvider(Job localJob) {

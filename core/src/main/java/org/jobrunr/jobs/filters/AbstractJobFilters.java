@@ -1,6 +1,5 @@
 package org.jobrunr.jobs.filters;
 
-import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.AbstractJob;
 import org.jobrunr.jobs.annotations.Job;
 import org.jobrunr.scheduling.exceptions.JobNotFoundException;
@@ -70,7 +69,7 @@ public abstract class AbstractJobFilters {
                 .filter(jobFilter -> ElectStateFilter.class.isAssignableFrom(jobFilter.getClass()))
                 .map(ElectStateFilter.class::cast)
                 .findFirst()
-                .orElseThrow(() -> JobRunrException.shouldNotHappenException("Can not happen..."));
+                .orElseThrow(() -> new IllegalStateException("Can not happen as there is always the RetryFilter..."));
     }
 
     private static Optional<ElectStateFilter> getElectStateFilter(org.jobrunr.jobs.annotations.Job jobAnnotation) {

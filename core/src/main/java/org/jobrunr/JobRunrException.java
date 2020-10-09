@@ -33,14 +33,14 @@ public class JobRunrException extends RuntimeException {
         return new JobRunrException(SHOULD_NOT_HAPPEN_MESSAGE, new IllegalStateException(message));
     }
 
-    public static JobRunrException invalidLambdaException(Exception exception) {
-        return new JobRunrException(INVALID_LAMBDA_MESSAGE, exception);
-    }
-
     public static JobRunrException shouldNotHappenException(Throwable cause) {
         if (cause instanceof JobRunrException) return (JobRunrException) cause;
         if (cause.getCause() instanceof JobRunrException) return (JobRunrException) cause.getCause();
         return new JobRunrException(SHOULD_NOT_HAPPEN_MESSAGE, cause);
+    }
+
+    public static JobRunrException invalidLambdaException(Exception exception) {
+        return new JobRunrException(INVALID_LAMBDA_MESSAGE, exception);
     }
 
     public static JobRunrException configurationException(String message) {
@@ -49,10 +49,6 @@ public class JobRunrException extends RuntimeException {
 
     public static JobRunrException problematicConfigurationException(String message) {
         return new JobRunrException(message, true);
-    }
-
-    public static JobRunrException problematicException(String message, Throwable cause) {
-        return new JobRunrException(message, true, cause);
     }
 
     public static JobRunrException configurationException(String message, Throwable cause) {

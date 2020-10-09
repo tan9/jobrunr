@@ -12,4 +12,9 @@ public class LConst1OperandInstruction extends ZeroOperandInstruction {
     public Object invokeInstruction() {
         return 1L;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "LCONST_0";
+    }
 }

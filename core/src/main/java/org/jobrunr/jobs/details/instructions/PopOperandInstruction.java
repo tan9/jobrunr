@@ -18,4 +18,9 @@ public class PopOperandInstruction extends ZeroOperandInstruction {
         return null;
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "POP";
+    }
+
 }

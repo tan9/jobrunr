@@ -8,4 +8,9 @@ public class FLoadOperandInstruction extends VisitLocalVariableInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "FLOAD " + variable;
+    }
+
 }

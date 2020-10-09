@@ -14,6 +14,7 @@ import org.jobrunr.server.threadpool.ScheduledThreadPoolJobRunrExecutor;
 import org.jobrunr.storage.BackgroundJobServerStatus;
 import org.jobrunr.storage.StorageProvider;
 import org.jobrunr.storage.ThreadSafeStorageProvider;
+import org.jobrunr.utils.diagnostics.Diagnostics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,7 @@ public class BackgroundJobServer implements BackgroundJobServerMBean {
         this.serverZooKeeper = createServerZooKeeper();
         this.jobZooKeeper = createJobZooKeeper();
         Runtime.getRuntime().addShutdownHook(new Thread(this::stop, "extShutdownHook"));
+        Diagnostics.registerBackgroundJobServer(this);
     }
 
     public void setJobFilters(List<JobFilter> jobFilters) {

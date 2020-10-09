@@ -8,4 +8,9 @@ public class DLoadOperandInstruction extends VisitLocalVariableInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "DLOAD " + variable;
+    }
+
 }

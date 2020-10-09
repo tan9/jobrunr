@@ -1,6 +1,5 @@
 package org.jobrunr.jobs.details.instructions;
 
-import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.details.JobDetailsFinderContext;
 import org.objectweb.asm.Opcodes;
 
@@ -8,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.utils.reflection.ReflectionUtils.cast;
 
 public class AllJVMInstructions {
@@ -58,7 +58,7 @@ public class AllJVMInstructions {
     public static <T extends AbstractJVMInstruction> T get(int opcode, JobDetailsFinderContext jobDetailsBuilder) {
         final Function<JobDetailsFinderContext, AbstractJVMInstruction> instructionBuilder = instructions.get(opcode);
         if (instructionBuilder == null) {
-            throw JobRunrException.shouldNotHappenException(new IllegalArgumentException("Instruction " + opcode + " not found"));
+            throw shouldNotHappenError("Instruction " + opcode + " not found", new IllegalArgumentException("Unknown instruction: " + opcode));
         }
         return cast(instructionBuilder.apply(jobDetailsBuilder));
     }

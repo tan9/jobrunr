@@ -8,4 +8,9 @@ public class InvokeVirtualInstruction extends JobDetailsInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "INVOKEVIRTUAL " + owner + "." + name + descriptor;
+    }
+
 }

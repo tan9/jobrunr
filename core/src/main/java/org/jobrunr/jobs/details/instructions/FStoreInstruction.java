@@ -8,4 +8,8 @@ public class FStoreInstruction extends StoreVariableInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "FSTORE " + variable;
+    }
 }

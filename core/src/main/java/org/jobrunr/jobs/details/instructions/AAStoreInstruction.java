@@ -17,4 +17,9 @@ public class AAStoreInstruction extends ZeroOperandInstruction {
     public Object invokeInstruction() {
         return null;
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "AASTORE";
+    }
 }

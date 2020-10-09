@@ -23,4 +23,9 @@ public class GetStaticInstruction extends VisitFieldInstruction {
         }
         return getObjectViaStaticField(className, methodName);
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "GETSTATIC " + owner + "." + name + ":" + descriptor;
+    }
 }

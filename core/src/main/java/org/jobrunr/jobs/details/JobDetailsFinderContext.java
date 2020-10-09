@@ -1,6 +1,6 @@
 package org.jobrunr.jobs.details;
 
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 import org.jobrunr.jobs.JobDetails;
 import org.jobrunr.jobs.JobParameter;
 import org.jobrunr.jobs.details.instructions.AbstractJVMInstruction;
@@ -12,9 +12,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.toFQClassName;
 
-public class JobDetailsFinderContext {
+public class JobDetailsFinderContext implements JobRunrError.DiagnosticsAware {
 
     private final SerializedLambda serializedLambda;
     private final LinkedList<AbstractJVMInstruction> instructions;
@@ -24,6 +25,7 @@ public class JobDetailsFinderContext {
     private String jobDetailsStaticFieldName;
     private String jobDetailsMethodName;
     private List<JobParameter> jobDetailsJobParameters;
+    private List<AbstractJVMInstruction> instructionsForDiagnosticReport;
 
     public JobDetailsFinderContext(SerializedLambda serializedLambda, Object... params) {
         this.serializedLambda = serializedLambda;
@@ -48,7 +50,7 @@ public class JobDetailsFinderContext {
         if (nbrInStack < localVariables.size()) {
             return localVariables.get(nbrInStack);
         }
-        throw JobRunrException.shouldNotHappenException("Can not find variable " + nbrInStack + " in stack");
+        throw shouldNotHappenError("Can not find variable " + nbrInStack + " in stack", this);
     }
 
     public void addLocalVariable(Object o) {
@@ -73,6 +75,7 @@ public class JobDetailsFinderContext {
     }
 
     private void invokeInstructions() {
+        backupInstructionsForDiagnosticReport();
         if (instructions.isEmpty() && localVariables.size() > 1) { // it is a method reference
             for (int i = 1; i < localVariables.size(); i++) {
                 Object variable = localVariables.get(i);
@@ -85,6 +88,10 @@ public class JobDetailsFinderContext {
                 instruction = pollFirstInstruction();
             }
         }
+    }
+
+    private void backupInstructionsForDiagnosticReport() {
+        this.instructionsForDiagnosticReport = new ArrayList<>(instructions);
     }
 
     protected List<Object> initLocalVariables(Object[] params) {
@@ -120,5 +127,13 @@ public class JobDetailsFinderContext {
 
     public void setJobParameters(List<JobParameter> jobParameters) {
         jobDetailsJobParameters = jobParameters;
+    }
+
+    @Override
+    public String getDiagnosticsInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("private static synthetic " + serializedLambda.getImplMethodName() + serializedLambda.getImplMethodSignature());
+        instructionsForDiagnosticReport.forEach(instruction -> sb.append("  ").append(instruction.toDiagnosticsString()).append("\n"));
+        return sb.toString();
     }
 }

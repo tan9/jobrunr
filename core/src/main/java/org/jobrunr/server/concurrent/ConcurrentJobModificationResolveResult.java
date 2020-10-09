@@ -16,8 +16,8 @@ public class ConcurrentJobModificationResolveResult {
         return new ConcurrentJobModificationResolveResult(true, job);
     }
 
-    public static ConcurrentJobModificationResolveResult failed(Job job) {
-        return new ConcurrentJobModificationResolveResult(false, job);
+    public static ConcurrentJobModificationResolveResult failed(Job localJob, Job job) {
+        return new ConcurrentJobModificationResolveResult(false, localJob);
     }
 
     public boolean failed() {
@@ -27,4 +27,6 @@ public class ConcurrentJobModificationResolveResult {
     public Job getJob() {
         return job;
     }
+
+
 }

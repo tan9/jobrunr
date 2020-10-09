@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.util.Arrays.stream;
-import static org.jobrunr.JobRunrException.shouldNotHappenException;
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.storage.sql.common.db.ConcurrentSqlModificationException.concurrentDatabaseModificationException;
 import static org.jobrunr.utils.reflection.ReflectionUtils.getValueFromFieldOrProperty;
 import static org.jobrunr.utils.reflection.ReflectionUtils.objectContainsFieldOrProperty;
@@ -178,7 +178,7 @@ public class Sql<T> {
     public void insertAll(List<T> batchCollection, String statement) {
         int[] result = insertOrUpdateAll(batchCollection, INSERT + statement);
         if (result.length != batchCollection.size()) {
-            throw shouldNotHappenException("Could not insert or update all objects - different result size: originalCollectionSize=" + batchCollection.size() + "; " + Arrays.toString(result));
+            throw shouldNotHappenError("Could not insert or update all objects", new IllegalStateException("SQL returned different result size: originalCollectionSize=" + batchCollection.size() + "; actual result=" + Arrays.toString(result)));
         } else if (stream(result).anyMatch(i -> i < Statement.SUCCESS_NO_INFO || i == 0)) {
             throw concurrentDatabaseModificationException(batchCollection, result);
         }
@@ -187,7 +187,7 @@ public class Sql<T> {
     public void updateAll(List<T> batchCollection, String statement) {
         int[] result = insertOrUpdateAll(batchCollection, UPDATE + statement);
         if (result.length != batchCollection.size()) {
-            throw shouldNotHappenException("Could not insert or update all objects - different result size: originalCollectionSize=" + batchCollection.size() + "; " + Arrays.toString(result));
+            throw shouldNotHappenError("Could not insert or update all objects", new IllegalStateException("SQL returned different result size: originalCollectionSize=" + batchCollection.size() + "; actual result=" + Arrays.toString(result)));
         } else if (stream(result).anyMatch(i -> i < 1)) {
             throw concurrentDatabaseModificationException(batchCollection, result);
         }

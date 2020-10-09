@@ -8,4 +8,9 @@ public class InvokeInterfaceInstruction extends JobDetailsInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "INVOKEINTERFACE " + owner + "." + name + descriptor;
+    }
+
 }

@@ -24,4 +24,8 @@ public class InvokeStaticInstruction extends VisitMethodInstruction {
         return createObjectViaStaticMethod(className, methodName, paramTypes, parameters.toArray());
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "INVOKESTATIC " + owner + "." + name + descriptor;
+    }
 }

@@ -1,6 +1,6 @@
 package org.jobrunr.server;
 
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 import org.jobrunr.server.jmx.JobServerStats;
 import org.jobrunr.storage.BackgroundJobServerStatus;
 import org.jobrunr.storage.ServerTimedOutException;
@@ -96,7 +96,7 @@ public class ServerZooKeeper implements Runnable {
                 .getBackgroundJobServers()
                 .stream()
                 .min(comparing(BackgroundJobServerStatus::getFirstHeartbeat))
-                .orElseThrow(() -> JobRunrException.shouldNotHappenException("No servers available?!"));
+                .orElseThrow(() -> JobRunrError.shouldNotHappenError("Unable to determine master - no BackgroundJobServers are available?!", new IllegalStateException("StorageProvider did not return any BackgroundJobServers.")));
         final boolean isMaster = oldestServer.getId().equals(backgroundJobServerStatus.getId());
         if (isMaster) {
             LOGGER.info("Server {} is master", backgroundJobServerStatus.getId());

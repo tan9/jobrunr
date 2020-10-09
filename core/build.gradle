@@ -100,6 +100,29 @@ jacocoTestReport {
     }
 }
 
+jar {
+    manifest {
+        attributes(
+                'Build-Jdk'      : "${System.properties['java.version']} (${System.properties['java.vendor']} ${System.properties['java.vm.version']})",
+                'Build-Timestamp': new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date()),
+                'Bundle-ContactAddress': 'https://github.com/jobrunr/jobrunr',
+                'Bundle-Description': 'JobRunr library',
+                'Bundle-ManifestVersion': 2,
+                'Bundle-Name': 'JobRunr',
+                'Bundle-SymbolicName': 'org.jobrunr.jobrunr',
+                'Bundle-Vendor': 'JobRunr',
+                'Bundle-Version': project.version.replace("v", ""),
+                'Implementation-Build-Date':  new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(new Date()),
+                'Implementation-Title': 'JobRunr',
+                'Implementation-Vendor': 'JobRunr',
+                'Implementation-Vendor-Id': 'org.jobrunr.jobrunr',
+                'Implementation-Version': project.version.replace("v", ""),
+                'Created-By'     : "Gradle ${gradle.gradleVersion}",
+                'Build-OS'       : "${System.properties['os.name']} ${System.properties['os.arch']} ${System.properties['os.version']}"
+        )
+    }
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {

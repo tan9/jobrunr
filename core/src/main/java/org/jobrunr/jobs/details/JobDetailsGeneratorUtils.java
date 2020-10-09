@@ -46,9 +46,13 @@ public class JobDetailsGeneratorUtils {
     }
 
     public static InputStream getClassContainingLambdaAsInputStream(Object lambda) {
-        String name = lambda.getClass().getName();
-        String location = "/" + toFQResource(name.substring(0, name.indexOf("$$"))) + ".class";
+        String location = getClassLocationOfLambda(lambda);
         return lambda.getClass().getResourceAsStream(location);
+    }
+
+    public static String getClassLocationOfLambda(Object lambda) {
+        String name = lambda.getClass().getName();
+        return "/" + toFQResource(name.substring(0, name.indexOf("$$"))) + ".class";
     }
 
     public static Object createObjectViaConstructor(String fqClassName, Class<?>[] paramTypes, Object[] parameters) {
@@ -120,7 +124,7 @@ public class JobDetailsGeneratorUtils {
         int endIndex = desc.lastIndexOf(')');
 
         if ((beginIndex == -1 && endIndex != -1) || (beginIndex != -1 && endIndex == -1)) {
-            throw JobRunrException.shouldNotHappenException("Could not find the parameterTypes in the descriptor " + desc);
+            throw new IllegalArgumentException("Could not find the parameterTypes in the descriptor " + desc);
         }
         String x0;
         if (beginIndex == -1 && endIndex == -1) {
@@ -146,9 +150,9 @@ public class JobDetailsGeneratorUtils {
         else if ("F".equals(paramType)) return float.class;
         else if ("D".equals(paramType)) return double.class;
         else if ("B".equals(paramType) || "S".equals(paramType) || "C".equals(paramType))
-            throw new JobRunrException("Error parsing lambda", new IllegalArgumentException("Parameters of type byte, short and char are not supported currently."));
+            throw new IllegalArgumentException("Error parsing lambda", new IllegalArgumentException("Parameters of type byte, short and char are not supported currently."));
         else if (paramType.startsWith("L")) return toClass(toFQClassName(paramType.substring(1).replace(";", "")));
         else if (paramType.startsWith("[")) return toClass(toFQClassName(paramType));
-        else throw JobRunrException.shouldNotHappenException("A classType was found which is not known: " + paramType);
+        else throw new IllegalArgumentException("A classType was found which is not known: " + paramType);
     }
 }

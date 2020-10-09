@@ -14,4 +14,9 @@ public class GetFieldInstruction extends VisitFieldInstruction {
     public Object invokeInstruction() {
         return getObjectViaField(jobDetailsBuilder.getStack().pollLast(), name);
     }
+
+    @Override
+    public String toDiagnosticsString() {
+        return "GETFIELD " + owner + "." + name + ":" + descriptor;
+    }
 }

@@ -8,4 +8,9 @@ public class IStoreInstruction extends StoreVariableInstruction {
         super(jobDetailsBuilder);
     }
 
+    @Override
+    public String toDiagnosticsString() {
+        return "ISTORE " + variable;
+    }
+
 }
