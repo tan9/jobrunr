@@ -1,5 +1,6 @@
 package org.jobrunr.storage;
 
+import org.jobrunr.jobs.AbstractJob;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
 import org.jobrunr.jobs.RecurringJob;
@@ -18,7 +19,14 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
-import static org.jobrunr.jobs.states.StateName.*;
+import static java.util.stream.Collectors.toSet;
+import static org.jobrunr.jobs.states.StateName.AWAITING;
+import static org.jobrunr.jobs.states.StateName.DELETED;
+import static org.jobrunr.jobs.states.StateName.ENQUEUED;
+import static org.jobrunr.jobs.states.StateName.FAILED;
+import static org.jobrunr.jobs.states.StateName.PROCESSING;
+import static org.jobrunr.jobs.states.StateName.SCHEDULED;
+import static org.jobrunr.jobs.states.StateName.SUCCEEDED;
 import static org.jobrunr.utils.JobUtils.getJobSignature;
 import static org.jobrunr.utils.reflection.ReflectionUtils.getValueFromFieldOrProperty;
 import static org.jobrunr.utils.reflection.ReflectionUtils.setFieldUsingAutoboxing;
@@ -180,12 +188,31 @@ public class InMemoryStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
+    public Set<String> getDistinctJobSignatures(StateName... states) {
+        return jobQueue.values().stream()
+                .filter(job -> asList(states).contains(job.getState()))
+                .map(AbstractJob::getJobSignature)
+                .collect(toSet());
+    }
+
+    @Override
     public boolean exists(JobDetails jobDetails, StateName... states) {
         String actualJobSignature = getJobSignature(jobDetails);
         return jobQueue.values().stream()
                 .anyMatch(job ->
                         asList(states).contains(job.getState())
                                 && actualJobSignature.equals(getJobSignature(job.getJobDetails())));
+    }
+
+    @Override
+    public boolean recurringJobExists(String recurringJobId, StateName... states) {
+        return jobQueue.values().stream()
+                .anyMatch(job ->
+                        asList(states).contains(job.getState())
+                                && job.getLastJobStateOfType(ScheduledState.class)
+                                .map(scheduledState -> scheduledState.getRecurringJobId())
+                                .map(actualRecurringJobId -> actualRecurringJobId.equals(recurringJobId))
+                                .orElse(false));
     }
 
     @Override

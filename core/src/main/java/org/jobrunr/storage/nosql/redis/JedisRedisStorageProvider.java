@@ -20,6 +20,7 @@ import static java.time.Instant.now;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.jobrunr.jobs.states.StateName.AWAITING;
 import static org.jobrunr.jobs.states.StateName.DELETED;
 import static org.jobrunr.jobs.states.StateName.ENQUEUED;
@@ -325,10 +326,32 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
+    public Set<String> getDistinctJobSignatures(StateName... states) {
+        try (final Jedis jedis = getJedis(); Pipeline p = jedis.pipelined()) {
+            List<Response<Set<String>>> jobSignatures = stream(states)
+                    .map(stateName -> p.smembers(jobDetailsKey(stateName)))
+                    .collect(toList());
+            p.sync();
+            return jobSignatures.stream().flatMap(res -> res.get().stream()).collect(toSet());
+        }
+    }
+
+    @Override
     public boolean exists(JobDetails jobDetails, StateName... states) {
         try (final Jedis jedis = getJedis(); Pipeline p = jedis.pipelined()) {
             List<Response<Boolean>> existsJob = stream(states)
                     .map(stateName -> p.sismember(jobDetailsKey(stateName), getJobSignature(jobDetails)))
+                    .collect(toList());
+            p.sync();
+            return existsJob.stream().map(Response::get).filter(b -> b).findAny().orElse(false);
+        }
+    }
+
+    @Override
+    public boolean recurringJobExists(String recurringJobId, StateName... states) {
+        try (final Jedis jedis = getJedis(); Pipeline p = jedis.pipelined()) {
+            List<Response<Boolean>> existsJob = stream(states)
+                    .map(stateName -> p.sismember(recurringJobKey(stateName), recurringJobId))
                     .collect(toList());
             p.sync();
             return existsJob.stream().map(Response::get).filter(b -> b).findAny().orElse(false);
@@ -458,6 +481,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
         if (SCHEDULED.equals(jobToSave.getState())) {
             transaction.zadd(QUEUE_SCHEDULEDJOBS_KEY, toMicroSeconds(((ScheduledState) jobToSave.getJobState()).getScheduledAt()), jobToSave.getId().toString());
         }
+        jobToSave.getJobStatesOfType(ScheduledState.class).findFirst().map(ScheduledState::getRecurringJobId).ifPresent(recurringJobId -> transaction.sadd(recurringJobKey(jobToSave.getState()), recurringJobId));
     }
 
     private void deleteJobMetadataForUpdate(Transaction transaction, Job job) {
@@ -469,6 +493,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
                 || (job.hasState(DELETED) && job.getJobStates().size() >= 2 && job.getJobState(-2) instanceof ScheduledState)) {
             transaction.srem(jobDetailsKey(SCHEDULED), getJobSignature(job.getJobDetails()));
         }
+        job.getJobStatesOfType(ScheduledState.class).findFirst().map(ScheduledState::getRecurringJobId).ifPresent(recurringJobId -> Stream.of(StateName.values()).forEach(stateName -> transaction.srem(recurringJobKey(stateName), recurringJobId)));
     }
 
     private void deleteJobMetadata(Transaction transaction, Job job) {

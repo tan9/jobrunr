@@ -10,6 +10,7 @@ import org.jobrunr.storage.listeners.StorageProviderChangeListener;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -60,7 +61,11 @@ public interface StorageProvider extends AutoCloseable {
 
     int deleteJobs(StateName state, Instant updatedBefore);
 
+    Set<String> getDistinctJobSignatures(StateName... states);
+
     boolean exists(JobDetails jobDetails, StateName... states);
+
+    boolean recurringJobExists(String recurringJobId, StateName... states);
 
     RecurringJob saveRecurringJob(RecurringJob recurringJob);
 

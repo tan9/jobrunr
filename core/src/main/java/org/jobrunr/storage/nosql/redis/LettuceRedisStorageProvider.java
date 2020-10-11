@@ -19,10 +19,7 @@ import org.jobrunr.utils.resilience.RateLimiter;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static io.lettuce.core.Range.unbounded;
@@ -30,6 +27,7 @@ import static java.time.Instant.now;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.jobrunr.jobs.states.StateName.AWAITING;
 import static org.jobrunr.jobs.states.StateName.DELETED;
 import static org.jobrunr.jobs.states.StateName.ENQUEUED;
@@ -353,11 +351,33 @@ public class LettuceRedisStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
+    public Set<String> getDistinctJobSignatures(StateName... states) {
+        try (final StatefulRedisConnection connection = getConnection()) {
+            RedisCommands<String, String> commands = connection.sync();
+            List<Set<String>> jobSignatures = stream(states)
+                    .map(stateName -> commands.smembers(jobDetailsKey(stateName)))
+                    .collect(toList());
+            return jobSignatures.stream().flatMap(Collection::stream).collect(toSet());
+        }
+    }
+
+    @Override
     public boolean exists(JobDetails jobDetails, StateName... states) {
         try (final StatefulRedisConnection connection = getConnection()) {
             RedisCommands<String, String> commands = connection.sync();
             List<Boolean> existsJob = stream(states)
                     .map(stateName -> commands.sismember(jobDetailsKey(stateName), getJobSignature(jobDetails)))
+                    .collect(toList());
+            return existsJob.stream().filter(b -> b).findAny().orElse(false);
+        }
+    }
+
+    @Override
+    public boolean recurringJobExists(String recurringJobId, StateName... states) {
+        try (final StatefulRedisConnection connection = getConnection()) {
+            RedisCommands<String, String> commands = connection.sync();
+            List<Boolean> existsJob = stream(states)
+                    .map(stateName -> commands.sismember(recurringJobKey(stateName), recurringJobId))
                     .collect(toList());
             return existsJob.stream().filter(b -> b).findAny().orElse(false);
         }
@@ -497,6 +517,7 @@ public class LettuceRedisStorageProvider extends AbstractStorageProvider {
         if (SCHEDULED.equals(jobToSave.getState())) {
             commands.zadd(QUEUE_SCHEDULEDJOBS_KEY, toMicroSeconds(((ScheduledState) jobToSave.getJobState()).getScheduledAt()), jobToSave.getId().toString());
         }
+        jobToSave.getJobStatesOfType(ScheduledState.class).findFirst().map(ScheduledState::getRecurringJobId).ifPresent(recurringJobId -> commands.sadd(recurringJobKey(jobToSave.getState()), recurringJobId));
     }
 
     private void deleteJobMetadataForUpdate(RedisCommands commands, Job job) {
@@ -508,6 +529,7 @@ public class LettuceRedisStorageProvider extends AbstractStorageProvider {
                 || (job.hasState(DELETED) && job.getJobStates().size() >= 2 && job.getJobState(-2) instanceof ScheduledState)) {
             commands.srem(jobDetailsKey(SCHEDULED), getJobSignature(job.getJobDetails()));
         }
+        job.getJobStatesOfType(ScheduledState.class).findFirst().map(ScheduledState::getRecurringJobId).ifPresent(recurringJobId -> Stream.of(StateName.values()).forEach(stateName -> commands.srem(recurringJobKey(stateName), recurringJobId)));
     }
 
     private void deleteJobMetadata(RedisCommands commands, Job job) {

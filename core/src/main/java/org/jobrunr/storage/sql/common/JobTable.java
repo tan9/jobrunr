@@ -20,7 +20,9 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
@@ -46,7 +48,8 @@ public class JobTable extends Sql<Job> {
                 .withVersion(AbstractJob::getVersion)
                 .with("jobAsJson", jobMapper::serializeJob)
                 .with("jobSignature", JobUtils::getJobSignature)
-                .with("scheduledAt", job -> job.hasState(StateName.SCHEDULED) ? job.<ScheduledState>getJobState().getScheduledAt() : null);
+                .with("scheduledAt", job -> job.hasState(StateName.SCHEDULED) ? job.<ScheduledState>getJobState().getScheduledAt() : null)
+                .with("recurringJobId", job -> job.hasState(StateName.SCHEDULED) ? job.<ScheduledState>getJobState().getRecurringJobId() : null);
     }
 
     public JobTable withId(UUID id) {
@@ -156,9 +159,20 @@ public class JobTable extends Sql<Job> {
                 .collect(toList());
     }
 
+    public Set<String> getDistinctJobSignatures(StateName[] states) {
+        return select("distinct jobSignature from jobrunr_jobs where state in (" + stream(states).map(stateName -> "'" + stateName.name() + "'").collect(joining(",")) + ")")
+                .map(resultSet -> resultSet.asString("jobSignature"))
+                .collect(Collectors.toSet());
+    }
+
     public boolean exists(JobDetails jobDetails, StateName... states) {
         return with("jobSignature", getJobSignature(jobDetails))
                 .selectExists("from jobrunr_jobs where state in (" + stream(states).map(stateName -> "'" + stateName.name() + "'").collect(joining(",")) + ") AND jobSignature = :jobSignature");
+    }
+
+    public boolean recurringJobExists(String recurringJobId, StateName... states) {
+        return with("recurringJobId", recurringJobId)
+                .selectExists("from jobrunr_jobs where state in (" + stream(states).map(stateName -> "'" + stateName.name() + "'").collect(joining(",")) + ") AND recurringJobId = :recurringJobId");
     }
 
     public int deletePermanently(UUID... ids) {
@@ -179,7 +193,7 @@ public class JobTable extends Sql<Job> {
 
     void insertOneJob(Job jobToSave) {
         try (Connection conn = dataSource.getConnection()) {
-            insert(conn, jobToSave, "into jobrunr_jobs values (:id, :version, :jobAsJson, :jobSignature, :state, :createdAt, :updatedAt, :scheduledAt)");
+            insert(conn, jobToSave, "into jobrunr_jobs values (:id, :version, :jobAsJson, :jobSignature, :state, :createdAt, :updatedAt, :scheduledAt, :recurringJobId)");
         } catch (SQLException e) {
             throw new StorageException(e);
         }
@@ -195,7 +209,7 @@ public class JobTable extends Sql<Job> {
 
     void insertAllJobs(List<Job> jobs) {
         jobs.forEach(JobTable::setId);
-        insertAll(jobs, "into jobrunr_jobs values (:id, :version, :jobAsJson, :jobSignature, :state, :createdAt, :updatedAt, :scheduledAt)");
+        insertAll(jobs, "into jobrunr_jobs values (:id, :version, :jobAsJson, :jobSignature, :state, :createdAt, :updatedAt, :scheduledAt, :recurringJobId)");
     }
 
     void updateAllJobs(List<Job> jobs) {

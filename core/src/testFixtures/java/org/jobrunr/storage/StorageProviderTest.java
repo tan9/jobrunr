@@ -12,6 +12,7 @@ import org.jobrunr.server.BackgroundJobServer;
 import org.jobrunr.server.ServerZooKeeper;
 import org.jobrunr.storage.listeners.JobStatsChangeListener;
 import org.jobrunr.stubs.BackgroundJobServerStub;
+import org.jobrunr.stubs.TestService;
 import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,8 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -257,6 +260,51 @@ public abstract class StorageProviderTest {
     }
 
     @Test
+    void testGetDistinctJobSignatures() {
+        TestService testService = new TestService();
+        Job job1 = aScheduledJob().withoutId().withJobDetails(() -> testService.doWork(UUID.randomUUID())).build();
+        Job job2 = anEnqueuedJob().withoutId().withJobDetails(() -> testService.doWork(2)).build();
+        Job job3 = anEnqueuedJob().withoutId().withJobDetails(() -> testService.doWork(2)).build();
+        Job job4 = anEnqueuedJob().withoutId().withJobDetails(() -> testService.doWorkThatTakesLong(5)).build();
+        Job job5 = aJobInProgress().withoutId().withJobDetails(() -> testService.doWork(2, 5)).build();
+        Job job6 = aSucceededJob().withoutId().withJobDetails(() -> testService.doWork(UUID.randomUUID())).build();
+
+        storageProvider.save(asList(job1, job2, job3, job4, job5, job6));
+
+        Set<String> distinctJobSignaturesForScheduledJobs = storageProvider.getDistinctJobSignatures(SCHEDULED);
+        assertThat(distinctJobSignaturesForScheduledJobs)
+                .hasSize(1)
+                .containsOnly("org.jobrunr.stubs.TestService.doWork(java.util.UUID)");
+
+        Set<String> distinctJobSignaturesForEnqueuedJobs = storageProvider.getDistinctJobSignatures(ENQUEUED);
+        assertThat(distinctJobSignaturesForEnqueuedJobs)
+                .hasSize(2)
+                .containsOnly(
+                        "org.jobrunr.stubs.TestService.doWorkThatTakesLong(java.lang.Integer)",
+                        "org.jobrunr.stubs.TestService.doWork(java.lang.Integer)");
+
+        Set<String> distinctJobSignaturesForJobsInProgress = storageProvider.getDistinctJobSignatures(PROCESSING);
+        assertThat(distinctJobSignaturesForJobsInProgress)
+                .hasSize(1)
+                .containsOnly(
+                        "org.jobrunr.stubs.TestService.doWork(java.lang.Integer,java.lang.Integer)");
+
+        Set<String> distinctJobSignaturesForSucceededJobs = storageProvider.getDistinctJobSignatures(SUCCEEDED);
+        assertThat(distinctJobSignaturesForSucceededJobs)
+                .hasSize(1)
+                .containsOnly(
+                        "org.jobrunr.stubs.TestService.doWork(java.util.UUID)");
+
+        Set<String> distinctJobSignaturesForScheduledAndEnqueuedJobs = storageProvider.getDistinctJobSignatures(SCHEDULED, ENQUEUED);
+        assertThat(distinctJobSignaturesForScheduledAndEnqueuedJobs)
+                .hasSize(3)
+                .containsOnly(
+                        "org.jobrunr.stubs.TestService.doWork(java.util.UUID)",
+                        "org.jobrunr.stubs.TestService.doWorkThatTakesLong(java.lang.Integer)",
+                        "org.jobrunr.stubs.TestService.doWork(java.lang.Integer)");
+    }
+
+    @Test
     void testExists() {
         JobDetails jobDetails = defaultJobDetails().build();
         RecurringJob recurringJob = aDefaultRecurringJob().withJobDetails(jobDetails).build();
@@ -277,6 +325,28 @@ public abstract class StorageProviderTest {
         storageProvider.delete(scheduledJob.getId());
         assertThat(storageProvider.exists(jobDetails, SCHEDULED, PROCESSING, SUCCEEDED)).isFalse();
         assertThat(storageProvider.exists(jobDetails, ENQUEUED, DELETED)).isTrue();
+    }
+
+    @Test
+    void testRecurringJobExists() {
+        JobDetails jobDetails = defaultJobDetails().build();
+        RecurringJob recurringJob = aDefaultRecurringJob().withJobDetails(jobDetails).build();
+        Job scheduledJob = recurringJob.toScheduledJob();
+
+        storageProvider.save(scheduledJob);
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), SCHEDULED, ENQUEUED, PROCESSING, SUCCEEDED)).isTrue();
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), SCHEDULED)).isTrue();
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), ENQUEUED, PROCESSING, SUCCEEDED)).isFalse();
+
+        scheduledJob.enqueue();
+        storageProvider.save(scheduledJob);
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), SCHEDULED, ENQUEUED, PROCESSING, SUCCEEDED)).isTrue();
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), ENQUEUED)).isTrue();
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), SCHEDULED, PROCESSING, SUCCEEDED)).isFalse();
+
+        storageProvider.delete(scheduledJob.getId());
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), SCHEDULED, PROCESSING, SUCCEEDED)).isFalse();
+        assertThat(storageProvider.recurringJobExists(recurringJob.getId(), ENQUEUED, DELETED)).isTrue();
     }
 
     @Test

@@ -11,11 +11,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
+import static org.jobrunr.JobRunrException.shouldNotHappenException;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.createObjectViaMethod;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptor;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptorAsArray;
-import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.isClassAssignableToObject;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.toFQClassName;
+import static org.jobrunr.utils.reflection.ReflectionUtils.isClassAssignableToObject;
 
 public abstract class JobDetailsInstruction extends VisitMethodInstruction {
 
@@ -68,7 +69,8 @@ public abstract class JobDetailsInstruction extends VisitMethodInstruction {
 
     private JobParameter toJobParameter(Class<?> paramType, Object param) {
         if (isClassAssignableToObject(paramType, param)) {
-            if (boolean.class.equals(paramType) && Integer.class.equals(param.getClass())) return new JobParameter(paramType, ((Integer) param) > 0);
+            if (boolean.class.equals(paramType) && Integer.class.equals(param.getClass()))
+                return new JobParameter(paramType, ((Integer) param) > 0);
             return new JobParameter(paramType, param);
         } else {
             throw new IllegalStateException("The found parameter types do not match the parameters (ParamType = " + paramType.getName() + "; Param.getClass() = " + param.getClass().getName() + ")");

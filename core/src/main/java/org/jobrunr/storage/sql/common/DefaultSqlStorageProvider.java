@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.jobrunr.storage.sql.common.DefaultSqlStorageProvider.DatabaseOptions.CREATE;
@@ -163,9 +164,21 @@ public class DefaultSqlStorageProvider extends AbstractStorageProvider implement
     }
 
     @Override
+    public Set<String> getDistinctJobSignatures(StateName... states) {
+        return jobTable()
+                .getDistinctJobSignatures(states);
+    }
+
+    @Override
     public boolean exists(JobDetails jobDetails, StateName... states) {
         return jobTable()
                 .exists(jobDetails, states);
+    }
+
+    @Override
+    public boolean recurringJobExists(String recurringJobId, StateName... states) {
+        return jobTable()
+                .recurringJobExists(recurringJobId, states);
     }
 
     @Override
