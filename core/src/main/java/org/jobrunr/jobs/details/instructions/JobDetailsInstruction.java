@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
-import static org.jobrunr.JobRunrException.shouldNotHappenException;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.createObjectViaMethod;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptor;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.findParamTypesFromDescriptorAsArray;

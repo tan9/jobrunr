@@ -20,7 +20,7 @@ public class ConcurrentJobModificationException extends StorageException {
     }
 
     public ConcurrentJobModificationException(String message, List<Job> concurrentUpdatedJobs) {
-        super("The following jobs where concurrently updated: " + concurrentUpdatedJobs.stream().map(job -> job.getId().toString()).collect(Collectors.joining(", ")));
+        super(message);
         this.concurrentUpdatedJobs = concurrentUpdatedJobs;
     }
 

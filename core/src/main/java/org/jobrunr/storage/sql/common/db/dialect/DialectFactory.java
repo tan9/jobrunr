@@ -1,6 +1,6 @@
 package org.jobrunr.storage.sql.common.db.dialect;
 
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -22,7 +22,7 @@ public class DialectFactory {
             }
             return ansiDialect;
         } catch (SQLException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Unable to get the connection url from the DataSource", e);
         }
     }
 

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import org.jobrunr.JobRunrError;
 import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.context.JobContext;
 import org.jobrunr.jobs.states.JobState;
@@ -50,7 +51,7 @@ public class JacksonJsonMapper implements JsonMapper {
         try {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 
@@ -59,7 +60,7 @@ public class JacksonJsonMapper implements JsonMapper {
         try {
             objectMapper.writeValue(writer, object);
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 
@@ -68,7 +69,7 @@ public class JacksonJsonMapper implements JsonMapper {
         try {
             objectMapper.writeValue(outputStream, object);
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 
@@ -79,7 +80,7 @@ public class JacksonJsonMapper implements JsonMapper {
         } catch (InvalidDefinitionException e) {
             throw JobRunrException.configurationException("Did you register all necessary Jackson Modules?", e);
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 

@@ -1,24 +1,17 @@
 package org.jobrunr.utils;
 
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystemAlreadyExistsException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.file.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.jobrunr.utils.diagnostics.DiagnosticsBuilder.diagnostics;
 
 public class ClassPathUtils {
 
@@ -36,7 +29,12 @@ public class ClassPathUtils {
             return toPathsOnClasspath(clazz, subFolder)
                     .flatMap(ClassPathUtils::listAllChildrenOnClasspath);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error listing all children on the classpath",
+                    diagnostics()
+                            .with("clazz", clazz.getName())
+                            .with("subFolder", String.join(", ", subFolder)),
+                    e);
         }
     }
 
@@ -66,7 +64,11 @@ public class ClassPathUtils {
 
             return Collections.list(resources).stream();
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error listing all resources as URL's in folder",
+                    diagnostics()
+                            .with("folder", folder),
+                    e);
         }
 
     }
@@ -85,7 +87,10 @@ public class ClassPathUtils {
                 return Paths.get(uri);
             }
         } catch (IOException | URISyntaxException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error transforming url to path",
+                    diagnostics().with("url", url.toString()),
+                    e);
         }
     }
 
@@ -106,7 +111,10 @@ public class ClassPathUtils {
 
             return Files.list(rootPath);
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error listing all children on classpath",
+                    diagnostics().with("path", rootPath.toString()),
+                    e);
         }
     }
 }

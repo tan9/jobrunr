@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 
 import static java.time.Duration.ofSeconds;
 import static java.time.Instant.now;
-import static org.jobrunr.JobRunrException.shouldNotHappenException;
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.jobs.states.StateName.PROCESSING;
 import static org.jobrunr.jobs.states.StateName.SUCCEEDED;
 import static org.jobrunr.storage.PageRequest.ascOnUpdatedAt;
@@ -78,9 +78,9 @@ public class JobZooKeeper implements Runnable {
             }
         } catch (Exception e) {
             if (exceptionCount.getAndIncrement() < 5) {
-                LOGGER.warn(JobRunrException.SHOULD_NOT_HAPPEN_MESSAGE + " - Processing will continue.", e);
+                LOGGER.warn(JobRunrException.SHOULD_NOT_HAPPEN_MESSAGE + " - Processing will continue.", shouldNotHappenError("JobZooKeeper exception", e));
             } else {
-                LOGGER.error("FATAL - JobRunr encountered too many processing exceptions. Shutting down.", shouldNotHappenException(e));
+                LOGGER.error("FATAL - JobRunr encountered too many processing exceptions. Shutting down.", shouldNotHappenError("JobZooKeeper encountered more than 5 exceptions. Shutting down BackgroundJobZooKeeper.", e));
                 backgroundJobServer.stop();
             }
         }

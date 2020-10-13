@@ -1,6 +1,6 @@
 package org.jobrunr.jobs.details;
 
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 import org.jobrunr.utils.reflection.ReflectionUtils;
 
 import java.io.InputStream;
@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.jobrunr.JobRunrException.invalidLambdaException;
+import static org.jobrunr.utils.diagnostics.DiagnosticsBuilder.diagnostics;
 import static org.jobrunr.utils.reflection.ReflectionUtils.getField;
 import static org.jobrunr.utils.reflection.ReflectionUtils.getMethod;
 import static org.jobrunr.utils.reflection.ReflectionUtils.loadClass;
@@ -40,33 +42,53 @@ public class JobDetailsGeneratorUtils {
         return "/" + toFQResource(name.substring(0, name.indexOf("$$"))) + ".class";
     }
 
-    public static Object createObjectViaConstructor(String fqClassName, Class<?>[] paramTypes, Object[] parameters) {
+    public static Object createObjectViaConstructor(String fqClassName, Class<?>[] parameterTypes, Object[] parameters) {
         try {
             Class<?> clazz = loadClass(fqClassName);
-            Constructor<?> constructor = clazz.getDeclaredConstructor(paramTypes);
+            Constructor<?> constructor = clazz.getDeclaredConstructor(parameterTypes);
             return constructor.newInstance(parameters);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error creating object via constructor",
+                    diagnostics()
+                            .with("fqClassName", fqClassName)
+                            .withParameterTypes(parameterTypes)
+                            .withParameters(parameters),
+                    e);
         }
     }
 
-    public static Object createObjectViaMethod(Object objectWithMethodToInvoke, String methodName, Class<?>[] paramTypes, Object[] parameters) {
+    public static Object createObjectViaMethod(Object objectWithMethodToInvoke, String methodName, Class<?>[] parameterTypes, Object[] parameters) {
         try {
             Class<?> clazz = objectWithMethodToInvoke.getClass();
-            Method method = getMethod(clazz, methodName, paramTypes);
+            Method method = getMethod(clazz, methodName, parameterTypes);
             return method.invoke(objectWithMethodToInvoke, parameters);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error creating object via method",
+                    diagnostics()
+                            .with("objectWithMethodToInvoke", objectWithMethodToInvoke.toString() + "(" + objectWithMethodToInvoke.getClass().getName() + ")")
+                            .with("methodName", methodName)
+                            .withParameterTypes(parameterTypes)
+                            .withParameters(parameters),
+                    e);
         }
     }
 
-    public static Object createObjectViaStaticMethod(String fqClassName, String methodName, Class<?>[] paramTypes, Object[] parameters) {
+    public static Object createObjectViaStaticMethod(String fqClassName, String methodName, Class<?>[] parameterTypes, Object[] parameters) {
         try {
             Class<?> clazz = loadClass(fqClassName);
-            Method method = getMethod(clazz, methodName, paramTypes);
+            Method method = getMethod(clazz, methodName, parameterTypes);
             return method.invoke(null, parameters);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error creating object via static method",
+                    diagnostics()
+                            .with("fqClassName", fqClassName)
+                            .with("methodName", methodName)
+                            .withParameterTypes(parameterTypes)
+                            .withParameters(parameters),
+                    e);
         }
     }
 
@@ -77,7 +99,12 @@ public class JobDetailsGeneratorUtils {
             ReflectionUtils.makeAccessible(field);
             return field.get(null);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error creating object via static field",
+                    diagnostics()
+                            .with("fqClassName", fqClassName)
+                            .with("fieldName", fieldName),
+                    e);
         }
     }
 
@@ -88,7 +115,12 @@ public class JobDetailsGeneratorUtils {
             ReflectionUtils.makeAccessible(field);
             return field.get(object);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError(
+                    "Error creating object via field",
+                    diagnostics()
+                            .withObject(object)
+                            .with("fieldName", fieldName),
+                    e);
         }
     }
 
@@ -127,7 +159,7 @@ public class JobDetailsGeneratorUtils {
         else if ("F".equals(paramType)) return float.class;
         else if ("D".equals(paramType)) return double.class;
         else if ("B".equals(paramType) || "S".equals(paramType) || "C".equals(paramType))
-            throw new IllegalArgumentException("Error parsing lambda", new IllegalArgumentException("Parameters of type byte, short and char are not supported currently."));
+            throw invalidLambdaException(new IllegalArgumentException("Parameters of type byte, short and char are not supported currently."));
         else if (paramType.startsWith("L")) return toClass(toFQClassName(paramType.substring(1).replace(";", "")));
         else if (paramType.startsWith("[")) return toClass(toFQClassName(paramType));
         else throw new IllegalArgumentException("A classType was found which is not known: " + paramType);

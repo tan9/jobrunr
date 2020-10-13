@@ -35,8 +35,7 @@ public class ConcurrentJobModificationResolver {
                 .collect(toList());
 
         if (!failedToResolve.isEmpty()) {
-            List<Job> failedJobs = failedToResolve.stream().map(ConcurrentJobModificationResolveResult::getJob).collect(toList());
-            throw new ConcurrentJobModificationException(failedJobs);
+            throw new UnresolvableConcurrentJobModificationException(failedToResolve);
         }
     }
 

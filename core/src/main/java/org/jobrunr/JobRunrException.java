@@ -29,16 +29,6 @@ public class JobRunrException extends RuntimeException {
         return doNotRetry;
     }
 
-    public static JobRunrException shouldNotHappenException(String message) {
-        return new JobRunrException(SHOULD_NOT_HAPPEN_MESSAGE, new IllegalStateException(message));
-    }
-
-    public static JobRunrException shouldNotHappenException(Throwable cause) {
-        if (cause instanceof JobRunrException) return (JobRunrException) cause;
-        if (cause.getCause() instanceof JobRunrException) return (JobRunrException) cause.getCause();
-        return new JobRunrException(SHOULD_NOT_HAPPEN_MESSAGE, cause);
-    }
-
     public static JobRunrException invalidLambdaException(Exception exception) {
         return new JobRunrException(INVALID_LAMBDA_MESSAGE, exception);
     }

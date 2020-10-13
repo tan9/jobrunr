@@ -18,7 +18,7 @@ public class Diagnostics {
         backgroundJobServers.add(backgroundJobServer);
     }
 
-    public static Optional<String> toDiagnosticsFile(JobRunrError jobRunrException) {
+    public static Optional<String> toDiagnosticsFile(JobRunrError jobRunrError) {
         return Optional.empty();
     }
 

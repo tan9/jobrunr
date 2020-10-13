@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.internal.bind.ObjectTypeAdapter;
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 import org.jobrunr.jobs.JobParameter;
 import org.jobrunr.jobs.context.JobContext;
 import org.jobrunr.jobs.states.JobState;
@@ -61,7 +61,7 @@ public class GsonJsonMapper implements JsonMapper {
         try (final OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
             gson.toJson(object, writer);
         } catch (IOException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 
@@ -82,7 +82,7 @@ public class GsonJsonMapper implements JsonMapper {
             o.set(1, ClassNameObjectTypeAdapter.FACTORY);
             factories.set(gson, unmodifiableList(o));
         } catch (ReflectiveOperationException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw shouldNotHappenError(String.format("It looks like you are running a Gson version (%s) which is not compatible with JobRunr", VersionRetriever.getVersion(Gson.class)), new IllegalStateException("Cannot apply workaround for https://github.com/google/gson/issues/1177"));
         }
     }
 }

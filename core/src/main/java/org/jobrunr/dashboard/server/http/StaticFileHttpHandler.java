@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 
+import static org.jobrunr.utils.io.IOUtils.copyStream;
+
 public class StaticFileHttpHandler extends AbstractTeenyHttpHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StaticFileHttpHandler.class);
@@ -72,14 +74,6 @@ public class StaticFileHttpHandler extends AbstractTeenyHttpHandler {
     void copyResourceToResponseBody(URL resource, HttpExchange httpExchange) throws IOException {
         try (InputStream inputStream = resource.openStream(); OutputStream outputStream = httpExchange.getResponseBody()) {
             copyStream(inputStream, outputStream);
-        }
-    }
-
-    private static void copyStream(InputStream input, OutputStream output) throws IOException {
-        byte[] buffer = new byte[1024]; // Adjust if you want
-        int bytesRead;
-        while ((bytesRead = input.read(buffer)) != -1) {
-            output.write(buffer, 0, bytesRead);
         }
     }
 }

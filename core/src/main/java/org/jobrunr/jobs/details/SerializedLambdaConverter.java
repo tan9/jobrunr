@@ -7,6 +7,7 @@ import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 
 import static org.jobrunr.JobRunrError.shouldNotHappenError;
+import static org.jobrunr.utils.diagnostics.DiagnosticsBuilder.diagnostics;
 import static org.jobrunr.utils.reflection.ReflectionUtils.makeAccessible;
 
 public class SerializedLambdaConverter {
@@ -25,7 +26,10 @@ public class SerializedLambdaConverter {
             makeAccessible(writeReplaceMethod);
             return (SerializedLambda) writeReplaceMethod.invoke(value);
         } catch (Exception shouldNotHappen) {
-            throw shouldNotHappenError("Can not convert lambda of type '" + value.getClass().getName() + "' to SerializedLambda", shouldNotHappen);
+            throw shouldNotHappenError("Can not convert lambda to SerializedLambda",
+                    diagnostics()
+                            .withObject(value),
+                    shouldNotHappen);
         }
     }
 }

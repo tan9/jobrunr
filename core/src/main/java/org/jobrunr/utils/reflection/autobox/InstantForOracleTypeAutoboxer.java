@@ -1,7 +1,7 @@
 package org.jobrunr.utils.reflection.autobox;
 
 import oracle.sql.TIMESTAMP;
-import org.jobrunr.JobRunrException;
+import org.jobrunr.JobRunrError;
 
 import java.sql.SQLException;
 import java.time.Instant;
@@ -13,7 +13,7 @@ public class InstantForOracleTypeAutoboxer extends InstantTypeAutoboxer {
         try {
             return ((TIMESTAMP) value).timestampValue().toInstant();
         } catch (SQLException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 }

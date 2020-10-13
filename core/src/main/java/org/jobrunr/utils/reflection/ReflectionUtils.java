@@ -1,5 +1,6 @@
 package org.jobrunr.utils.reflection;
 
+import org.jobrunr.JobRunrError;
 import org.jobrunr.scheduling.exceptions.FieldNotFoundException;
 import org.jobrunr.scheduling.exceptions.JobNotFoundException;
 import org.jobrunr.utils.reflection.autobox.Autoboxer;
@@ -19,8 +20,9 @@ import java.util.stream.Stream;
 
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.stream;
-import static org.jobrunr.JobRunrException.shouldNotHappenException;
+import static org.jobrunr.JobRunrException.invalidLambdaException;
 import static org.jobrunr.utils.StringUtils.capitalize;
+import static org.jobrunr.utils.diagnostics.DiagnosticsBuilder.diagnostics;
 
 public class ReflectionUtils {
 
@@ -121,15 +123,19 @@ public class ReflectionUtils {
         return t;
     }
 
-    public static <T> T newInstance(String className, Object... params) {
-        return newInstance(toClass(className), params);
+    public static <T> T newInstance(String className, Object... parameters) {
+        return newInstance(toClass(className), parameters);
     }
 
-    public static <T> T newInstance(Class<T> clazz, Object... params) {
+    public static <T> T newInstance(Class<T> clazz, Object... parameters) {
         try {
-            return newInstanceCE(clazz, params);
+            return newInstanceCE(clazz, parameters);
         } catch (ReflectiveOperationException e) {
-            throw shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Error creating new instance",
+                    diagnostics()
+                            .with("class", clazz.getName())
+                            .withParameters(parameters),
+                    e);
         }
     }
 
@@ -145,7 +151,10 @@ public class ReflectionUtils {
             makeAccessible(defaultConstructor);
             return defaultConstructor.newInstance();
         } catch (ReflectiveOperationException e) {
-            throw shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Error creating new instance with default constructor",
+                    diagnostics()
+                            .with("class", clazz.getName()),
+                    e);
         }
     }
 
@@ -194,8 +203,9 @@ public class ReflectionUtils {
     }
 
     public static boolean isClassAssignableToObject(Class<?> clazz, Object object) {
-        if (object == null)
-            throw new NullPointerException("You are passing null to your background job - JobRunr prevents this to fail fast.");
+        if (object == null) {
+            throw invalidLambdaException(new NullPointerException("You are passing null to your background job - JobRunr prevents this to fail fast."));
+        }
         return isClassAssignable(clazz, object.getClass());
     }
 
@@ -250,7 +260,12 @@ public class ReflectionUtils {
             Object fieldValue = autobox(value, type);
             field.set(object, fieldValue);
         } catch (ReflectiveOperationException e) {
-            throw shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Error setting field using autoboxing",
+                    diagnostics()
+                            .with("field", field.getName())
+                            .withObject("onObject", object)
+                            .withObject("value", value),
+                    e);
         }
     }
 

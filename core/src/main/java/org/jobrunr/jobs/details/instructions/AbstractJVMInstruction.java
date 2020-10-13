@@ -1,7 +1,9 @@
 package org.jobrunr.jobs.details.instructions;
 
-import org.jobrunr.JobRunrError;
+import org.jobrunr.JobRunrException;
 import org.jobrunr.jobs.details.JobDetailsFinderContext;
+
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 
 public abstract class AbstractJVMInstruction {
 
@@ -17,8 +19,10 @@ public abstract class AbstractJVMInstruction {
         try {
             Object result = invokeInstruction();
             jobDetailsBuilder.getStack().add(result);
+        } catch (JobRunrException e) {
+            throw e;
         } catch (Exception e) {
-            throw JobRunrError.shouldNotHappenError("Exception invoking instruction: " + this.getClass().getName(), jobDetailsBuilder, e);
+            throw shouldNotHappenError("Exception invoking instruction: " + this.getClass().getName(), jobDetailsBuilder, e);
         }
     }
 

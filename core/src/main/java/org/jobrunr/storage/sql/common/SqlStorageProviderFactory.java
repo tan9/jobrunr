@@ -1,5 +1,6 @@
 package org.jobrunr.storage.sql.common;
 
+import org.jobrunr.JobRunrError;
 import org.jobrunr.JobRunrException;
 import org.jobrunr.storage.StorageProvider;
 import org.jobrunr.storage.sql.SqlStorageProvider;
@@ -26,7 +27,7 @@ public class SqlStorageProviderFactory {
             String jdbcUrl = connection.getMetaData().getURL();
             return getStorageProviderByJdbcUrl(jdbcUrl, dataSource);
         } catch (SQLException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.shouldNotHappenError("Error retrieving StorageProvider via DataSource", e);
         }
     }
 
@@ -59,7 +60,7 @@ public class SqlStorageProviderFactory {
             final Constructor<?> declaredConstructor = jobStorageProviderClass.getDeclaredConstructor(DataSource.class);
             return (StorageProvider) declaredConstructor.newInstance(dataSource);
         } catch (ReflectiveOperationException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 
@@ -67,7 +68,7 @@ public class SqlStorageProviderFactory {
         try {
             return cast(Class.forName(className));
         } catch (ReflectiveOperationException e) {
-            throw JobRunrException.shouldNotHappenException(e);
+            throw JobRunrError.canNotHappenError(e);
         }
     }
 

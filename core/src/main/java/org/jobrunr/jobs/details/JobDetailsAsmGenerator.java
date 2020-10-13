@@ -11,8 +11,10 @@ import org.objectweb.asm.*;
 import java.io.IOException;
 import java.lang.invoke.SerializedLambda;
 
+import static org.jobrunr.JobRunrError.shouldNotHappenError;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.getClassContainingLambdaAsInputStream;
 import static org.jobrunr.jobs.details.JobDetailsGeneratorUtils.getClassLocationOfLambda;
+import static org.jobrunr.utils.diagnostics.DiagnosticsBuilder.diagnostics;
 
 public class JobDetailsAsmGenerator implements JobDetailsGenerator {
     private final SerializedLambdaConverter serializedLambdaConverter;
@@ -47,8 +49,11 @@ public class JobDetailsAsmGenerator implements JobDetailsGenerator {
             ClassReader parser = new ClassReader(getClassContainingLambdaAsInputStream(lambda));
             parser.accept(jobDetailsFinder, ClassReader.SKIP_FRAMES);
             return jobDetailsFinder.getJobDetails();
-        } catch (IOException e) {
-            throw JobRunrError.shouldNotHappenError("Could not parse class '" + getClassLocationOfLambda(lambda) + "'", e);
+        } catch (IOException | JobRunrError e) {
+            throw shouldNotHappenError("Could not parse class '" + getClassLocationOfLambda(lambda) + "'",
+                    diagnostics()
+                            .withLambda(lambda),
+                    e);
         }
     }
 

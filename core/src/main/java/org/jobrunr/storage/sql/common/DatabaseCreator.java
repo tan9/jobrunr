@@ -1,5 +1,6 @@
 package org.jobrunr.storage.sql.common;
 
+import org.jobrunr.JobRunrError;
 import org.jobrunr.JobRunrException;
 import org.jobrunr.storage.sql.SqlStorageProvider;
 import org.slf4j.Logger;
@@ -112,7 +113,7 @@ public class DatabaseCreator {
             runMigrationStatement(conn, path);
             updateMigrationsTable(conn, path);
         } catch (Exception e) {
-            throw JobRunrException.shouldNotHappenException(new IllegalStateException("Error running database migration " + path.getFileName(), e));
+            throw JobRunrError.shouldNotHappenError("Error running database migration " + path.getFileName(), e);
         }
     }
 
@@ -159,7 +160,7 @@ public class DatabaseCreator {
         try {
             return connectionProvider.getConnection();
         } catch (SQLException exception) {
-            throw JobRunrException.shouldNotHappenException(exception);
+            throw JobRunrError.shouldNotHappenError("Error retrieving connection from DataSource", exception);
         }
     }
 

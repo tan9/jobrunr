@@ -51,10 +51,11 @@ class JobDetailsAsmGeneratorTest {
     }
 
     @Test
-    //@Disabled
+        //@Disabled
     void logByteCode() {
         String name = this.getClass().getName();
         String location = new File(".").getAbsolutePath() + "/build/classes/java/test/" + toFQResource(name) + ".class";
+        //String location = new File("/tmp/test.class").getAbsolutePath();
         assertThatCode(() -> Textifier.main(new String[]{location})).doesNotThrowAnyException();
     }
 
@@ -94,7 +95,10 @@ class JobDetailsAsmGeneratorTest {
         TestService.Work work = null;
         JobLambda job = () -> testService.doWork(work);
         assertThatThrownBy(() -> jobDetailsGenerator.toJobDetails(job))
-                .isInstanceOf(NullPointerException.class)
+                .isInstanceOf(JobRunrException.class)
+                .hasMessage("The lambda you provided is not valid.")
+                .hasCauseExactlyInstanceOf(NullPointerException.class)
+                .getCause()
                 .hasMessage("You are passing null to your background job - JobRunr prevents this to fail fast.");
     }
 
@@ -299,8 +303,10 @@ class JobDetailsAsmGeneratorTest {
         JobLambda job = () -> testService.doWork((byte) 0x3, (short) 2, 'c');
         assertThatThrownBy(() -> jobDetailsGenerator.toJobDetails(job))
                 .isInstanceOf(JobRunrException.class)
-                .hasMessage("Error parsing lambda")
-                .hasCauseInstanceOf(IllegalArgumentException.class);
+                .hasMessage("The lambda you provided is not valid.")
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .getCause()
+                .hasMessage("Parameters of type byte, short and char are not supported currently.");
     }
 
     @Test
@@ -565,8 +571,10 @@ class JobDetailsAsmGeneratorTest {
         IocJobLambda<TestService> iocJobLambda = (x) -> x.doWork((byte) 0x3, (short) 2, 'c');
         assertThatThrownBy(() -> jobDetailsGenerator.toJobDetails(iocJobLambda))
                 .isInstanceOf(JobRunrException.class)
-                .hasMessage("Error parsing lambda")
-                .hasCauseInstanceOf(IllegalArgumentException.class);
+                .hasMessage("The lambda you provided is not valid.")
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .getCause()
+                .hasMessage("Parameters of type byte, short and char are not supported currently.");
     }
 
     @Test
