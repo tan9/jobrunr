@@ -1,11 +1,14 @@
 package org.jobrunr.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.mongodb.client.*;
 import io.lettuce.core.RedisClient;
 import org.elasticsearch.client.IndicesClient;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
+import org.jobrunr.autoconfigure.storage.*;
 import org.jobrunr.dashboard.JobRunrDashboardWebServer;
 import org.jobrunr.scheduling.JobScheduler;
 import org.jobrunr.server.BackgroundJobServer;
@@ -16,9 +19,12 @@ import org.jobrunr.storage.nosql.mongo.MongoDBStorageProvider;
 import org.jobrunr.storage.nosql.redis.JedisRedisStorageProvider;
 import org.jobrunr.storage.nosql.redis.LettuceRedisStorageProvider;
 import org.jobrunr.storage.sql.common.DefaultSqlStorageProvider;
+import org.jobrunr.utils.mapper.gson.GsonJsonMapper;
+import org.jobrunr.utils.mapper.jackson.JacksonJsonMapper;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,8 +53,24 @@ public class JobRunrAutoConfigurationTest {
             ));
 
     @Test
+    public void gsonIsIgnoredIfLibraryIsNotPresent() {
+        this.contextRunner
+                .withUserConfiguration(InMemoryStorageProvider.class)
+                .withClassLoader(new FilteredClassLoader(Gson.class))
+                .run((context) -> assertThat(context).getBean("jsonMapper").isInstanceOf(JacksonJsonMapper.class));
+    }
+
+    @Test
+    public void jacksonIsIgnoredIfLibraryIsNotPresent() {
+        this.contextRunner
+                .withUserConfiguration(InMemoryStorageProvider.class)
+                .withClassLoader(new FilteredClassLoader(ObjectMapper.class))
+                .run((context) -> assertThat(context).getBean("jsonMapper").isInstanceOf(GsonJsonMapper.class));
+    }
+
+    @Test
     public void dashboardAutoConfiguration() {
-        this.contextRunner.withPropertyValues("org.jobrunr.dashboard=true").withUserConfiguration(InMemoryStorageProvider.class).run((context) -> {
+        this.contextRunner.withPropertyValues("org.jobrunr.dashboard.enabled=true").withUserConfiguration(InMemoryStorageProvider.class).run((context) -> {
             assertThat(context).hasSingleBean(JobRunrDashboardWebServer.class);
             assertThat(context).doesNotHaveBean(BackgroundJobServer.class);
         });
@@ -56,7 +78,7 @@ public class JobRunrAutoConfigurationTest {
 
     @Test
     public void backgroundJobServerAutoConfiguration() {
-        this.contextRunner.withPropertyValues("org.jobrunr.background_job_server=true").withUserConfiguration(InMemoryStorageProvider.class).run((context) -> {
+        this.contextRunner.withPropertyValues("org.jobrunr.background-job-server.enabled=true").withUserConfiguration(InMemoryStorageProvider.class).run((context) -> {
             assertThat(context).hasSingleBean(BackgroundJobServer.class);
             assertThat(context).doesNotHaveBean(JobRunrDashboardWebServer.class);
         });
@@ -72,7 +94,7 @@ public class JobRunrAutoConfigurationTest {
 
     @Test
     public void sqlStorageProviderAutoConfiguration() {
-        this.contextRunner.withPropertyValues("org.jobrunr.database.skip_create=true").withUserConfiguration(SqlDataSourceConfiguration.class).run((context) -> {
+        this.contextRunner.withPropertyValues("org.jobrunr.database.skip-create=true").withUserConfiguration(SqlDataSourceConfiguration.class).run((context) -> {
             assertThat(context).hasSingleBean(DefaultSqlStorageProvider.class);
             assertThat(context).hasSingleBean(JobScheduler.class);
         });

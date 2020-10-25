@@ -60,6 +60,8 @@ public class InMemoryStorageProvider extends AbstractStorageProvider {
                 serverStatus.getId(),
                 serverStatus.getWorkerPoolSize(),
                 serverStatus.getPollIntervalInSeconds(),
+                serverStatus.getDeleteSucceededJobsAfter(),
+                serverStatus.getPermanentlyDeleteDeletedJobsAfter(),
                 serverStatus.getFirstHeartbeat(),
                 serverStatus.getLastHeartbeat(),
                 serverStatus.isRunning(),
@@ -122,7 +124,7 @@ public class InMemoryStorageProvider extends AbstractStorageProvider {
     @Override
     public int deletePermanently(UUID id) {
         boolean removed = jobQueue.keySet().remove(id);
-        notifyOnChangeListenersIf(removed);
+        notifyJobStatsOnChangeListenersIf(removed);
         return removed ? 1 : 0;
     }
 
@@ -176,7 +178,7 @@ public class InMemoryStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
-    public int deleteJobs(StateName state, Instant updatedBefore) {
+    public int deleteJobsPermanently(StateName state, Instant updatedBefore) {
         List<UUID> jobsToRemove = jobQueue.values().stream()
                 .filter(job -> job.hasState(state))
                 .filter(job -> job.getUpdatedAt().isBefore(updatedBefore))

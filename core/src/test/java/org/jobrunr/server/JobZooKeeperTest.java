@@ -46,7 +46,7 @@ import static org.jobrunr.jobs.states.StateName.FAILED;
 import static org.jobrunr.jobs.states.StateName.PROCESSING;
 import static org.jobrunr.jobs.states.StateName.SCHEDULED;
 import static org.jobrunr.jobs.states.StateName.SUCCEEDED;
-import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
+import static org.jobrunr.storage.BackgroundJobServerStatusTestBuilder.aDefaultBackgroundJobServerStatus;
 import static org.jobrunr.storage.PageRequest.ascOnUpdatedAt;
 import static org.jobrunr.utils.SleepUtils.sleep;
 import static org.jobrunr.utils.reflection.ReflectionUtils.cast;
@@ -80,11 +80,9 @@ class JobZooKeeperTest {
     @BeforeEach
     void setUpBackgroundJobZooKeeper() {
         logAllStateChangesFilter = new BackgroundJobTestFilter();
-        backgroundJobServerStatus = new BackgroundJobServerStatus(15, 10);
+        backgroundJobServerStatus = aDefaultBackgroundJobServerStatus().build();
         jobZooKeeper = initializeJobZooKeeper();
         logger = LoggerAssert.initFor(jobZooKeeper);
-
-        lenient().when(backgroundJobServer.getConfiguration()).thenReturn(usingStandardBackgroundJobServerConfiguration());
     }
 
     @Test
@@ -96,7 +94,7 @@ class JobZooKeeperTest {
         verify(storageProvider, never()).getRecurringJobs();
         verify(storageProvider, never()).getScheduledJobs(any(), any());
         verify(storageProvider, never()).getJobs(any(), any(), any());
-        verify(storageProvider, never()).deleteJobs(any(), any());
+        verify(storageProvider, never()).deleteJobsPermanently(any(), any());
     }
 
     @Test
@@ -203,11 +201,11 @@ class JobZooKeeperTest {
 
     @Test
     void checkForJobsThatCanBeDeleted() {
-        when(storageProvider.deleteJobs(eq(DELETED), any())).thenReturn(5);
+        when(storageProvider.deleteJobsPermanently(eq(DELETED), any())).thenReturn(5);
 
         jobZooKeeper.run();
 
-        verify(storageProvider).deleteJobs(eq(DELETED), any());
+        verify(storageProvider).deleteJobsPermanently(eq(DELETED), any());
     }
 
     @Test
@@ -226,7 +224,7 @@ class JobZooKeeperTest {
 
     @Test
     void evenWhenNoWorkCanBeOnboardedJobsThatAreProcessedAreBeingUpdatedWithAHeartbeat() {
-        backgroundJobServerStatus = new BackgroundJobServerStatus(15, 0);
+        backgroundJobServerStatus = aDefaultBackgroundJobServerStatus().withWorkerSize(0).build();
         jobZooKeeper = initializeJobZooKeeper();
 
         final Job job = anEnqueuedJob().withId().build();

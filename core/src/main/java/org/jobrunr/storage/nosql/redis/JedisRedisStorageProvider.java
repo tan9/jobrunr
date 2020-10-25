@@ -12,6 +12,7 @@ import org.jobrunr.utils.annotations.Beta;
 import org.jobrunr.utils.resilience.RateLimiter;
 import redis.clients.jedis.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -77,6 +78,8 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_ID, serverStatus.getId().toString());
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_WORKER_POOL_SIZE, String.valueOf(serverStatus.getWorkerPoolSize()));
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_POLL_INTERVAL_IN_SECONDS, String.valueOf(serverStatus.getPollIntervalInSeconds()));
+            p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_DELETE_SUCCEEDED_JOBS_AFTER, String.valueOf(serverStatus.getDeleteSucceededJobsAfter()));
+            p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_DELETE_DELETED_JOBS_AFTER, String.valueOf(serverStatus.getPermanentlyDeleteDeletedJobsAfter()));
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_FIRST_HEARTBEAT, String.valueOf(serverStatus.getFirstHeartbeat()));
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_LAST_HEARTBEAT, String.valueOf(serverStatus.getLastHeartbeat()));
             p.hset(backgroundJobServerKey(serverStatus), BackgroundJobServers.FIELD_IS_RUNNING, String.valueOf(serverStatus.isRunning()));
@@ -133,6 +136,8 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
                             UUID.fromString(fieldMap.get(BackgroundJobServers.FIELD_ID)),
                             Integer.parseInt(fieldMap.get(BackgroundJobServers.FIELD_WORKER_POOL_SIZE)),
                             Integer.parseInt(fieldMap.get(BackgroundJobServers.FIELD_POLL_INTERVAL_IN_SECONDS)),
+                            Duration.parse(fieldMap.get(BackgroundJobServers.FIELD_DELETE_SUCCEEDED_JOBS_AFTER)),
+                            Duration.parse(fieldMap.get(BackgroundJobServers.FIELD_DELETE_DELETED_JOBS_AFTER)),
                             Instant.parse(fieldMap.get(BackgroundJobServers.FIELD_FIRST_HEARTBEAT)),
                             Instant.parse(fieldMap.get(BackgroundJobServers.FIELD_LAST_HEARTBEAT)),
                             Boolean.parseBoolean(fieldMap.get(BackgroundJobServers.FIELD_IS_RUNNING)),
@@ -187,7 +192,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
             deleteJobMetadata(transaction, job);
             final List<Object> result = transaction.exec();
             int amount = result == null || result.isEmpty() ? 0 : 1;
-            notifyOnChangeListenersIf(amount > 0);
+            notifyJobStatsOnChangeListenersIf(amount > 0);
             return amount;
         }
     }
@@ -227,7 +232,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
                 }
             }
         }
-        notifyOnChangeListenersIf(!jobs.isEmpty());
+        notifyJobStatsOnChangeListenersIf(!jobs.isEmpty());
         return jobs;
     }
 
@@ -299,7 +304,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
-    public int deleteJobs(StateName state, Instant updatedBefore) {
+    public int deleteJobsPermanently(StateName state, Instant updatedBefore) {
         int amount = 0;
         try (final Jedis jedis = getJedis()) {
             Set<String> zrangeToInspect = jedis.zrange(jobQueueForStateKey(state), 0, 1000);
@@ -321,7 +326,7 @@ public class JedisRedisStorageProvider extends AbstractStorageProvider {
                 zrangeToInspect = jedis.zrange(jobQueueForStateKey(state), 0, 1000);
             }
         }
-        notifyOnChangeListenersIf(amount > 0);
+        notifyJobStatsOnChangeListenersIf(amount > 0);
         return amount;
     }
 

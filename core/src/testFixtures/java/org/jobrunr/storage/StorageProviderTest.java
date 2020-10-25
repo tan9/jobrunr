@@ -54,6 +54,7 @@ import static org.jobrunr.jobs.states.StateName.ENQUEUED;
 import static org.jobrunr.jobs.states.StateName.PROCESSING;
 import static org.jobrunr.jobs.states.StateName.SCHEDULED;
 import static org.jobrunr.jobs.states.StateName.SUCCEEDED;
+import static org.jobrunr.storage.BackgroundJobServerStatusTestBuilder.aDefaultBackgroundJobServerStatus;
 import static org.jobrunr.storage.PageRequest.ascOnUpdatedAt;
 import static org.jobrunr.storage.PageRequest.descOnUpdatedAt;
 import static org.jobrunr.utils.SleepUtils.sleep;
@@ -85,12 +86,12 @@ public abstract class StorageProviderTest {
 
     @Test
     void testAnnounceAndListBackgroundJobServers() {
-        final BackgroundJobServerStatus serverStatus1 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(new BackgroundJobServerStatus(15, 10));
+        final BackgroundJobServerStatus serverStatus1 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(aDefaultBackgroundJobServerStatus().build());
         serverStatus1.start();
         storageProvider.announceBackgroundJobServer(serverStatus1);
         sleep(100);
 
-        final BackgroundJobServerStatus serverStatus2 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(new BackgroundJobServerStatus(15, 10));
+        final BackgroundJobServerStatus serverStatus2 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(aDefaultBackgroundJobServerStatus().build());
         serverStatus2.start();
         storageProvider.announceBackgroundJobServer(serverStatus2);
         sleep(100);
@@ -117,14 +118,14 @@ public abstract class StorageProviderTest {
 
     @Test
     void testRemoveTimedOutBackgroundJobServers() {
-        final BackgroundJobServerStatus serverStatus1 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(new BackgroundJobServerStatus(15, 10));
+        final BackgroundJobServerStatus serverStatus1 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(aDefaultBackgroundJobServerStatus().build());
         serverStatus1.start();
         storageProvider.announceBackgroundJobServer(serverStatus1);
         sleep(50);
         Instant deleteServersWithHeartbeatOlderThanThis = now();
         sleep(50);
 
-        final BackgroundJobServerStatus serverStatus2 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(new BackgroundJobServerStatus(15, 10));
+        final BackgroundJobServerStatus serverStatus2 = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(aDefaultBackgroundJobServerStatus().build());
         serverStatus2.start();
         storageProvider.announceBackgroundJobServer(serverStatus2);
 
@@ -136,7 +137,7 @@ public abstract class StorageProviderTest {
 
     @Test
     void ifServerHasTimedOutAndSignalsItsAliveAnExceptionIsThrown() {
-        final BackgroundJobServerStatus serverStatus = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(new BackgroundJobServerStatus(15, 10));
+        final BackgroundJobServerStatus serverStatus = new ServerZooKeeper.BackgroundJobServerStatusWriteModel(aDefaultBackgroundJobServerStatus().build());
         serverStatus.start();
         storageProvider.announceBackgroundJobServer(serverStatus);
         sleep(100);
@@ -465,7 +466,7 @@ public abstract class StorageProviderTest {
 
         storageProvider.save(jobs);
 
-        storageProvider.deleteJobs(ENQUEUED, now().minus(1, HOURS));
+        storageProvider.deleteJobsPermanently(ENQUEUED, now().minus(1, HOURS));
 
         List<Job> fetchedJobs = storageProvider.getJobs(ENQUEUED, ascOnUpdatedAt(100));
 
@@ -545,7 +546,7 @@ public abstract class StorageProviderTest {
         final SimpleJobStorageOnChangeListener onChangeListener = new SimpleJobStorageOnChangeListener();
         storageProvider.addJobStorageOnChangeListener(onChangeListener);
 
-        storageProvider.deleteJobs(ENQUEUED, now());
+        storageProvider.deleteJobsPermanently(ENQUEUED, now());
 
         assertThat(onChangeListener.changes).hasSize(1);
     }

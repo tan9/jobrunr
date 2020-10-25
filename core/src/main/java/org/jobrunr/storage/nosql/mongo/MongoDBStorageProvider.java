@@ -8,6 +8,10 @@ import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
+import org.bson.codecs.UuidCodec;
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.jobrunr.jobs.Job;
 import org.jobrunr.jobs.JobDetails;
@@ -18,8 +22,11 @@ import org.jobrunr.storage.*;
 import org.jobrunr.storage.StorageProviderUtils.BackgroundJobServers;
 import org.jobrunr.storage.StorageProviderUtils.Jobs;
 import org.jobrunr.storage.StorageProviderUtils.RecurringJobs;
+import org.jobrunr.utils.reflection.ReflectionUtils;
 import org.jobrunr.utils.resilience.RateLimiter;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -41,6 +48,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
+import static org.jobrunr.JobRunrException.shouldNotHappenException;
 import static org.jobrunr.jobs.states.StateName.AWAITING;
 import static org.jobrunr.jobs.states.StateName.DELETED;
 import static org.jobrunr.jobs.states.StateName.ENQUEUED;
@@ -74,6 +82,10 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
         this(MongoClients.create(
                 MongoClientSettings.builder()
                         .applyToClusterSettings(builder -> builder.hosts(singletonList(new ServerAddress(hostName, port))))
+                        .codecRegistry(CodecRegistries.fromRegistries(
+                                CodecRegistries.fromCodecs(new UuidCodec(UuidRepresentation.STANDARD)),
+                                MongoClientSettings.getDefaultCodecRegistry()
+                        ))
                         .build()));
     }
 
@@ -83,6 +95,8 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
 
     public MongoDBStorageProvider(MongoClient mongoClient, RateLimiter changeListenerNotificationRateLimit) {
         super(changeListenerNotificationRateLimit);
+
+        validateMongoClient(mongoClient);
 
         if (jobRunrDatabaseExists(mongoClient)) {
             jobrunrDatabase = mongoClient.getDatabase("jobrunr");
@@ -172,7 +186,7 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
     public int deletePermanently(UUID id) {
         final DeleteResult result = jobCollection.deleteOne(eq(toMongoId(Jobs.FIELD_ID), id));
         final int deletedCount = (int) result.getDeletedCount();
-        notifyOnChangeListenersIf(deletedCount > 0);
+        notifyJobStatsOnChangeListenersIf(deletedCount > 0);
         return deletedCount;
     }
 
@@ -220,7 +234,7 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
 
             }
         }
-        notifyOnChangeListenersIf(!jobs.isEmpty());
+        notifyJobStatsOnChangeListenersIf(!jobs.isEmpty());
         return jobs;
     }
 
@@ -250,10 +264,10 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
     }
 
     @Override
-    public int deleteJobs(StateName state, Instant updatedBefore) {
+    public int deleteJobsPermanently(StateName state, Instant updatedBefore) {
         final DeleteResult deleteResult = jobCollection.deleteMany(and(eq(Jobs.FIELD_STATE, state.name()), lt(Jobs.FIELD_CREATED_AT, toMicroSeconds(updatedBefore))));
         final long deletedCount = deleteResult.getDeletedCount();
-        notifyOnChangeListenersIf(deletedCount > 0);
+        notifyJobStatsOnChangeListenersIf(deletedCount > 0);
         return (int) deletedCount;
     }
 
@@ -374,7 +388,25 @@ public class MongoDBStorageProvider extends AbstractStorageProvider {
         return false;
     }
 
-    // used to perform query analysis
+    private void validateMongoClient(MongoClient mongoClient) {
+        Optional<Method> codecRegistryGetter = ReflectionUtils.findMethod(mongoClient, "getCodecRegistry");
+        if (codecRegistryGetter.isPresent()) {
+            try {
+                CodecRegistry codecRegistry = (CodecRegistry) codecRegistryGetter.get().invoke(mongoClient);
+                UuidCodec uuidCodec = (UuidCodec) codecRegistry.get(UUID.class);
+                if (UuidRepresentation.UNSPECIFIED == uuidCodec.getUuidRepresentation()) {
+                    throw new StorageException("\n" +
+                            "Since release 4.0.0 of the MongoDB Java Driver, the default BSON representation of java.util.UUID values has changed from JAVA_LEGACY to UNSPECIFIED.\n" +
+                            "Applications that store or retrieve UUID values must explicitly specify which representation to use, via the uuidRepresentation property of MongoClientSettings.\n" +
+                            "The good news is that JobRunr works both with the STANDARD as the JAVA_LEGACY uuidRepresentation. Please choose the one most appropriate for your application.");
+                }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw shouldNotHappenException(e);
+            }
+        }
+    }
+
+    // used to perform query analysis for performance tuning
     private void explainQuery(Bson query) {
         Document explainDocument = new Document();
         explainDocument.put("find", Jobs.NAME);

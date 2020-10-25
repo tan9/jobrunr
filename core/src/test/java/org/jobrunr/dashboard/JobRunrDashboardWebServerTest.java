@@ -26,6 +26,7 @@ import static org.jobrunr.jobs.JobTestBuilder.aFailedJobWithRetries;
 import static org.jobrunr.jobs.JobTestBuilder.aJob;
 import static org.jobrunr.jobs.JobTestBuilder.anEnqueuedJob;
 import static org.jobrunr.jobs.RecurringJobTestBuilder.aDefaultRecurringJob;
+import static org.jobrunr.storage.BackgroundJobServerStatusTestBuilder.aDefaultBackgroundJobServerStatus;
 
 abstract class JobRunrDashboardWebServerTest {
 
@@ -117,7 +118,7 @@ abstract class JobRunrDashboardWebServerTest {
     }
 
     @Test
-    void testGetJobsNotFound() {
+    void testGetProblems() {
         storageProvider.save(aJob().withJobDetails(methodThatDoesNotExistJobDetails()).withState(new ScheduledState(Instant.now().plus(1, ChronoUnit.DAYS))).build());
 
         HttpResponse<String> getResponse = http.get("/api/problems");
@@ -149,7 +150,7 @@ abstract class JobRunrDashboardWebServerTest {
 
     @Test
     void testGetBackgroundJobServers() {
-        final BackgroundJobServerStatus serverStatus = new BackgroundJobServerStatus(15, 10);
+        final BackgroundJobServerStatus serverStatus = aDefaultBackgroundJobServerStatus().build();
         serverStatus.start();
         storageProvider.announceBackgroundJobServer(new ServerZooKeeper.BackgroundJobServerStatusWriteModel(serverStatus));
 

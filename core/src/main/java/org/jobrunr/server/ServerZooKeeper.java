@@ -49,12 +49,22 @@ public class ServerZooKeeper implements Runnable {
     }
 
     public void stop() {
-        storageProvider.signalBackgroundJobServerStopped(backgroundJobServerStatus);
-        isAnnounced = false;
+        if (isAnnounced) {
+            try {
+                storageProvider.signalBackgroundJobServerStopped(backgroundJobServerStatus);
+                isAnnounced = false;
+            } catch (Exception e) {
+                LOGGER.error("Error when signalling that BackgroundJobServer stopped", e);
+            }
+        }
     }
 
     protected BackgroundJobServerStatusWriteModel getBackgroundJobServerStatusWriteModel(BackgroundJobServer backgroundJobServer) {
         return new BackgroundJobServerStatusWriteModel(backgroundJobServer.getServerStatus());
+    }
+
+    public boolean isAnnounced() {
+        return isAnnounced;
     }
 
     private boolean isUnannounced() {
@@ -117,13 +127,14 @@ public class ServerZooKeeper implements Runnable {
         return backgroundJobServer.getJobZooKeeper();
     }
 
+
     public static class BackgroundJobServerStatusWriteModel extends BackgroundJobServerStatus {
 
         private final JobServerStats jobServerStats;
         private final BackgroundJobServerStatus serverStatusDelegate;
 
         public BackgroundJobServerStatusWriteModel(BackgroundJobServerStatus serverStatusDelegate) {
-            super(serverStatusDelegate.getPollIntervalInSeconds(), serverStatusDelegate.getWorkerPoolSize());
+            super(serverStatusDelegate.getWorkerPoolSize(), serverStatusDelegate.getPollIntervalInSeconds(), serverStatusDelegate.getDeleteSucceededJobsAfter(), serverStatusDelegate.getPermanentlyDeleteDeletedJobsAfter());
             this.jobServerStats = new JobServerStats();
             this.serverStatusDelegate = serverStatusDelegate;
         }
@@ -141,6 +152,16 @@ public class ServerZooKeeper implements Runnable {
         @Override
         public int getPollIntervalInSeconds() {
             return serverStatusDelegate.getPollIntervalInSeconds();
+        }
+
+        @Override
+        public Duration getDeleteSucceededJobsAfter() {
+            return serverStatusDelegate.getDeleteSucceededJobsAfter();
+        }
+
+        @Override
+        public Duration getPermanentlyDeleteDeletedJobsAfter() {
+            return serverStatusDelegate.getPermanentlyDeleteDeletedJobsAfter();
         }
 
         @Override
