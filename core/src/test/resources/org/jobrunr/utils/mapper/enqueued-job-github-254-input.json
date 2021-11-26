@@ -1,32 +1,77 @@
 {
-  "version": 0,
-  "jobSignature": "org.jobrunr.stubs.TestService.doWork(java.lang.Long)",
-  "jobName": "an enqueued job",
+  "version": 3,
+  "jobSignature": "gov.fia.sts.task.scheduling.proxy.TaskWorkerJobProxy.perform(java.lang.Long,org.jobrunr.jobs.context.JobContext)",
+  "jobName": "gov.fia.sts.task.scheduling.proxy.TaskWorkerJobProxy.perform(3742,JobContext)",
   "jobDetails": {
-    "className": "org.jobrunr.stubs.TestService",
+    "className": "gov.fia.sts.task.scheduling.proxy.TaskWorkerJobProxy",
     "staticFieldName": null,
-    "methodName": "doWork",
+    "methodName": "perform",
     "jobParameters": [
       {
-        "className": "java.lang.Long",
+        "className": "long",
         "actualClassName": "java.lang.Long",
         "object": [
           "java.lang.Long",
-          1
+          3742
         ]
+      },
+      {
+        "className": "org.jobrunr.jobs.context.JobContext",
+        "actualClassName": "org.jobrunr.jobs.context.JobContext",
+        "object": {
+          "@class": "org.jobrunr.jobs.context.JobContext",
+          "job": null,
+          "jobDashboardLogger": null,
+          "jobDashboardProgressBar": null
+        }
       }
     ],
-    "cacheable": true
+    "cacheable": false
   },
-  "id": "8bf98a10-f673-4fd8-9b9c-43ded0030910",
+  "id": "026196c4-c757-44d1-92c8-1ae02b9d2019",
   "jobHistory": [
     {
       "@class": "org.jobrunr.jobs.states.EnqueuedState",
       "state": "ENQUEUED",
-      "createdAt": "2021-11-10T11:37:40.551537Z"
+      "createdAt": "2021-11-09T01:47:24.038Z"
+    },
+    {
+      "@class": "org.jobrunr.jobs.states.ProcessingState",
+      "state": "PROCESSING",
+      "createdAt": "2021-11-09T01:49:08.007Z",
+      "serverId": "5bc8867f-1552-43c7-bf91-0dc8a5335232",
+      "updatedAt": "2021-11-09T01:49:08.007Z"
+    },
+    {
+      "@class": "org.jobrunr.jobs.states.FailedState",
+      "state": "FAILED",
+      "createdAt": "2021-11-09T01:49:12.584Z",
+      "message": "An exception occurred during the performance of the job",
+      "exceptionType": "java.lang.reflect.InvocationTargetException",
+      "exceptionMessage": null,
+      "exceptionCauseType": "java.lang.IllegalArgumentException",
+      "exceptionCauseMessage": "Cannot deserialize instance of `java.util.ArrayList<java.util.Map<java.lang.String,java.lang.Object>>` out of VALUE_STRING token\n at [Source: UNKNOWN; line: -1, column: -1]",
+      "stackTrace": "java.lang.reflect.InvocationTargetException\n\tat sun.reflect.GeneratedMethodAccessor928.invoke(Unknown Source)\n\tat sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:55)\n\tat java.lang.reflect.Method.invoke(Method.java:508)\n\tat org.jobrunr.server.runner.AbstractBackgroundJobRunner$BackgroundJobWorker.invokeJobMethod(AbstractBackgroundJobRunner.java:64)\n\tat org.jobrunr.server.runner.AbstractBackgroundJobRunner$BackgroundJobWorker.run(AbstractBackgroundJobRunner.java:38)\n\tat org.jobrunr.server.runner.AbstractBackgroundJobRunner.run(AbstractBackgroundJobRunner.java:20)\n\tat org.jobrunr.server.BackgroundJobPerformer.runActualJob(BackgroundJobPerformer.java:80)\n\tat org.jobrunr.server.BackgroundJobPerformer.run(BackgroundJobPerformer.java:40)\n\tat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:522)\n\tat java.util.concurrent.FutureTask.run(FutureTask.java:277)\n\tat java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.access$201(ScheduledThreadPoolExecutor.java:191)\n\tat java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304)\n\tat java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1160)\n\tat java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)\n\tat java.lang.Thread.run(Thread.java:822)\nCaused by: java.lang.IllegalArgumentException: Cannot deserialize instance of `java.util.ArrayList<java.util.Map<java.lang.String,java.lang.Object>>` out of VALUE_STRING token\n at [Source: UNKNOWN; line: -1, column: -1]\n\tat com.fasterxml.jackson.databind.ObjectMapper._convert(ObjectMapper.java:4236)\n\tat com.fasterxml.jackson.databind.ObjectMapper.convertValue(ObjectMapper.java:4177)\n\tat gov.fia.sts.task.worker.CrossModuleModelWorker.performNormalCase(CrossModuleModelWorker.java:130)\n\tat gov.fia.sts.task.worker.CrossModuleModelWorker.perform(CrossModuleModelWorker.java:103)\n\tat gov.fia.sts.task.worker.CrossModuleModelWorker$$FastClassBySpringCGLIB$$5a521a0e.invoke(<generated>)\n\tat org.springframework.cglib.proxy.MethodProxy.invoke(MethodProxy.java:218)\n\tat org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.invokeJoinpoint(CglibAopProxy.java:779)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163)\n\tat org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:750)\n\tat org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123)\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport.lambda$invokeWithinTransaction$2(TransactionAspectSupport.java:420)\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport$$Lambda$2606/00000000BE1607D0.doInTransaction(Unknown Source)\n\tat org.springframework.transaction.jta.WebSphereUowTransactionManager$UOWActionAdapter.run(WebSphereUowTransactionManager.java:371)\n\tat com.ibm.ws.uow.embeddable.EmbeddableUOWManagerImpl.runUnderNewUOW(EmbeddableUOWManagerImpl.java:736)\n\tat com.ibm.ws.uow.embeddable.EmbeddableUOWManagerImpl.runUnderUOW(EmbeddableUOWManagerImpl.java:329)\n\tat org.springframework.transaction.jta.WebSphereUowTransactionManager.execute(WebSphereUowTransactionManager.java:306)\n\tat org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:417)\n\tat org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119)\n\tat org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:186)\n\tat org.springframework.aop.framework.CglibAopProxy$CglibMethodInvocation.proceed(CglibAopProxy.java:750)\n\tat org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:692)\n\tat gov.fia.sts.task.worker.CrossModuleModelWorker$$EnhancerBySpringCGLIB$$7b66b113.perform(<generated>)\n\tat gov.fia.sts.task.worker.AbstractDataLogTaskWorker.perform(AbstractDataLogTaskWorker.java:24)\n\tat gov.fia.sts.task.scheduling.proxy.TaskWorkerJobProxy.perform(TaskWorkerJobProxy.java:55)\n\t... 15 more\nCaused by: com.fasterxml.jackson.databind.exc.MismatchedInputException: Cannot deserialize instance of `java.util.ArrayList<java.util.Map<java.lang.String,java.lang.Object>>` out of VALUE_STRING token\n at [Source: UNKNOWN; line: -1, column: -1]\n\tat com.fasterxml.jackson.databind.exc.MismatchedInputException.from(MismatchedInputException.java:59)\n\tat com.fasterxml.jackson.databind.DeserializationContext.reportInputMismatch(DeserializationContext.java:1468)\n\tat com.fasterxml.jackson.databind.DeserializationContext.handleUnexpectedToken(DeserializationContext.java:1242)\n\tat com.fasterxml.jackson.databind.DeserializationContext.handleUnexpectedToken(DeserializationContext.java:1190)\n\tat com.fasterxml.jackson.databind.deser.std.CollectionDeserializer.handleNonArray(CollectionDeserializer.java:336)\n\tat com.fasterxml.jackson.databind.deser.std.CollectionDeserializer.deserialize(CollectionDeserializer.java:269)\n\tat com.fasterxml.jackson.databind.deser.std.CollectionDeserializer.deserialize(CollectionDeserializer.java:249)\n\tat com.fasterxml.jackson.databind.deser.std.CollectionDeserializer.deserialize(CollectionDeserializer.java:26)\n\tat com.fasterxml.jackson.databind.ObjectMapper._convert(ObjectMapper.java:4231)\n\t... 38 more\n",
+      "doNotRetry": false
     }
   ],
   "metadata": {
-    "@class": "java.util.concurrent.ConcurrentHashMap"
+    "@class": "java.util.concurrent.ConcurrentHashMap",
+    "USER_UNIT": "FDCTT00",
+    "jobRunrDashboardLog-2": {
+      "@class": "org.jobrunr.jobs.context.JobDashboardLogger$JobDashboardLogLines",
+      "logLines": []
+    },
+    "USER_ID": "N0STS01",
+    "USER_REALM": [
+      "gov.fia.sts.security.Realms",
+      "FDC"
+    ],
+    "FUNCTION_ID": "sts201w",
+    "TASK_ID": [
+      "java.lang.Long",
+      3742
+    ],
+    "GROUP_ID": "B"
   }
 }
